@@ -1,0 +1,5 @@
+id("xid")
+time("time")
+dose(Aa<-"dose")
+covr(wt<-"wt")
+obs(CObs<-"yobs")

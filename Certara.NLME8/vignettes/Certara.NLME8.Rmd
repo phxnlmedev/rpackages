@@ -1,0 +1,75 @@
+---
+title: "Certara.NLME8"
+author: "Fred Soltanshahi"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>"
+)
+```
+
+Certara.NLME8 allows NLME execution locally/remotely in parallel. Supports : 
+
+    SGE/TORQUE grids
+    Linux Multicore runs
+    Linux individual runs
+    Windows Multicore runs
+    Windows individual runs
+
+## Installation guide
+
+## Install MPICH2 and gcc
+
+- MPICH2 enables usage of multiple CPUs and CPU cores. MPI version is 1.4.1p1 is required and can be downloaded from: http://www.mpich.org/downloads/versions/mpich2-1.4.1.p1-win-x86-64.msi
+- The gcc 4.9.2 compiler is used to create PML (Phoenix Modeling Language) models. This compiler is required and can be downloaded from: https://sourceforge.net/projects/mingw-w64/
+
+## Install the R libraries
+
+If the following R libraries are already installed, skip this step. Otherwise, run the R program as the administrator and use the Packages > Install Packages menu option to install the following libraries.
+
+- reshape
+- ssh
+- XML
+- reshape
+
+## Install the Certara R package
+
+Certara.NLME8 package from Certara also need to be installed in R .  Use devtools package to install these from githubs.
+
+- library(devtools)
+- install_github("phxnlmedev/rpackages/Certara.NLME8")
+
+## Setup enviornment to execute NLME engine
+
+### Default Installation Location of NLME libraries
+Sys.setenv("NLME_ROOT_DIRECTORY"="C:/Program Files/R/R-3.5.1/library/Certara.NLME8/InstallDir")
+
+### NLME engine license obtained from support@certara.com
+Sys.setenv("PhoenixLicenseFile"="D:\\\\SDCard\\\\NlmeInstall_04_30_18\\\\lservrc")
+
+### NLME engine work directory
+Sys.setenv("NLME_ROOT_DIRECTORY"="D:/SDCard/NlmeInstall_04_30_18")
+
+## Examples and Datasets
+
+For each NLME run mode, there is a directory that has all the data/model files necessary plus an R script, a Windows batch file or Linux shell script example to run that particular mode of NLME (run.r, run.bat, run.sh).
+
+- bootstrap: Performs a Bootstrap execution.
+
+- generic_run: Performs a Simple estimation and VPC Simulation
+
+- profile_estimation: Performs a Profile Perturbation
+
+- shotgun_covarsrch: Performs a Shotgun Covariate Search
+
+- sortcol_estimation: Performs a Multiple Estimation with Sort column enabled
+
+- stepwise_covarsrch: Performs a Stepwise Covariate Search

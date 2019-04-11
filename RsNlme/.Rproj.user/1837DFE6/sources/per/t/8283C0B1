@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548793691126.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3708506821",
+    "id" : "8283C0B1",
+    "lastKnownWriteTime" : 1554909332,
+    "last_content_update" : 1554909332,
+    "path" : "C:/Work/Next/PMLUtilities-Next/NLME7CommandLine/RPackages/RsNlme/R/random_eff.r",
+    "project_path" : "R/random_eff.r",
+    "properties" : {
+        "cursorPosition" : "196,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 22,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

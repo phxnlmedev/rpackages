@@ -1,0 +1,5 @@
+id("xid")
+time("Time")
+dose(Aa<-"xDose")
+obs(CObs<-"Conc")
+table(file="posthoc.csv",time(0),Ka,V,Ke,CMultStdev)

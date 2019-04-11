@@ -1,0 +1,16 @@
+Package: Xpose.Nlme
+Title: Creates xpose databases for PML/NLME results
+Version: 1.0.0
+Authors@R: person("Fred", "Soltanshahi", email = "fred.soltanshahi@certara.com" , role = c("aut", "cre"))
+Description: Creates an xpose database that can generate graphics from NLME results.
+Depends: R (>= 3.3.3)
+License: LGPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
+Suggests: 
+    knitr,
+    rmarkdown
+Imports:
+    methods, utils, ggplot2, graphics, dplyr, gridExtra, xpose, tibble
+VignetteBuilder: knitr

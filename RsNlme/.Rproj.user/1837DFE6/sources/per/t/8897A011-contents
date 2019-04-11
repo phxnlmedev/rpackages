@@ -1,0 +1,168 @@
+
+
+
+#
+# setup environment
+#
+Sys.setenv("NLME_ROOT_DIRECTORY"="D:/SDCard/NlmeInstall_04_30_18")
+#Sys.setenv("INSTALLDIR"="D:/SDCard/NlmeInstall_04_30_18/InstallDirNLME")
+Sys.setenv("INSTALLDIR"="C:/Program Files/R/R-3.5.1/library/Certara.NLME8/InstallDir")
+#Sys.setenv("NLME_HASH"="1395043679")
+Sys.setenv("NLME_KEEP_GRID_RESULTS"="FALSE")
+#Sys.setenv("PhoenixLicenseFile"="C:\\Program Files (x86)\\Pharsight\\Phoenix\\application\\Services\\Licensing\\lservrc")
+#
+# Load library
+#
+library(Certara.NLME8)
+library(RsNlme)
+library(ssh)
+library(xpose)
+library(Xpose.Nlme)
+
+
+
+
+dataset=NlmeDataset()
+
+
+#
+# run locally with MPI enabled
+#
+
+#
+# engine parameters
+#
+engineParams = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_ELS,
+                              PARAMS_NUM_ITERATIONS=1000,
+                              PARAMS_SAND="TRUE")
+
+
+hostmpi = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
+                        parallelMethod=NlmeParallelMethod("LOCAL_MPI"),
+                        hostName="MPI",
+                        numCores=4)
+
+host = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
+                           parallelMethod=NlmeParallelMethod("LOCAL_MPI"),
+                           hostName="MPI",
+                           numCores=4)
+
+mhost = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
+                        parallelMethod=NlmeParallelMethod("MULTICORE"),
+                        hostName="multicore",
+                        numCores=4)
+
+
+user = NlmeUserAuthentication(userName = "fred", userPassword = "Lendit_5757")
+#torqueHost = NlmeParallelHost(sharedDirectory="/vgrid/NLME_GRID/Phoenix82/RStuff",
+#                              parallelMethod=NlmeParallelMethod("TORQUE_MPI"),
+#                              hostName="s01rdus-vgrid00",
+#                              machineName="s01rdus-vgrid00",
+#                              hostType = "Linux",
+#                              numCores=32,
+#                              userAuthentication=user,
+#                              scriptPath = "/opt/openmpi/setup_ompi.sh",
+#                             isLocal=FALSE)
+
+qrpemParams = NlmeEngineExtraParams(PARAMS_METHOD= METHOD_QRPEM,
+                                    PARAMS_NUM_ITERATIONS=1000,
+                                    PARAMS_SAND="TRUE")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+viewResults <-function(){
+  grdev<-getOption("device")
+  if(class(grdev)!="character"){
+    grdev<-"None"
+  }
+  if(grdev!="RStudioGD") dev.new()
+  par(mfrow=c(2,2),mar=c(4,4,1,1))
+  source("dmp.txt")
+  names(dmp.txt)
+  View(dmp.txt$coefficients$fixed)
+  View(dmp.txt$eta)
+  View(dmp.txt$posthoc)
+ # ggplot(data=dmp.txt$residuals,aes(x=pred,y=dv))+geom_point(colour=dmp.txt$residuals$ID5)
+ # ggplot(data=dmp.txt$residuals,aes(x=IPRED,y=dv))+geom_point(colour=dmp.txt$residuals$ID5)
+  PRED=dmp.txt$residuals$PRED
+  IPRED=dmp.txt$residuals$IPRED
+  DV=dmp.txt$residuals$DV
+  TAD=dmp.txt$residuals$TAD
+  CWRES=dmp.txt$residuals$WRES
+  IWRES=dmp.txt$residuals$IWRES
+  scatter.smooth(PRED,DV,xlab="PRED",ylab="DV",col=rgb(0,0,1,0.15),pch=16,cex=1.5,mgp=c(2.25,0.5,0),tck=-0.015,lpars=list(col="red",lwd=3,lty=1))
+  #abline(0,1)
+  scatter.smooth(IPRED,DV,xlab="IPRED",ylab="DV",col=rgb(0,0,1,0.15),pch=16,cex=1.5,mgp=c(2.25,0.5,0),tck=-0.015,lpars=list(col="red",lwd=3,lty=1))
+ # abline(0,1)
+  scatter.smooth(TAD,CWRES,xlab="TAD",ylab="CWRES",col=rgb(0,0,1,0.15),pch=16,cex=1.5,mgp=c(2.25,0.5,0),tck=-0.015,lpars=list(col="red",lwd=3,lty=1))
+  scatter.smooth(TAD,IWRES,xlab="TAD",ylab="IWRES",col=rgb(0,0,1,0.15),pch=16,cex=1.5,mgp=c(2.25,0.5,0),tck=-0.015,lpars=list(col="red",lwd=3,lty=1))
+
+
+  #hist(dmp.txt$residuals$WRES,prob=TRUE)
+
+  par(mfrow=c(2,2),mar=c(3,3,1,1))
+
+  x<-dmp.txt$residuals$WRES
+  maxcwr<-max(abs(x),na.rm=TRUE)
+
+  hist(x,prob=TRUE,breaks="FD",xlab="CWRES",main="",xlim=c(-maxcwr,maxcwr),
+       border=NA,col="grey75",cex=1.5,mgp=c(2,0.5,0),tck=-0.015)
+  box(bty="o")
+  lines(density(x,adjust=1.25),col="red",lwd=2)
+  abline(v=0,lty=1,lwd=1)
+  lines(density(rnorm(10000,mean=0,sd=1),adjust=2),lty=2,lwd=1)#,mean=mean(x),sd=sd(x))))
+
+  qqnorm(x,col=rgb(0,0,1,0.15),cex=1.5,main="",pch=16,
+         xlim=c(-maxcwr,maxcwr),ylim=c(-maxcwr,maxcwr),
+         mgp=c(2,0.5,0),tck=-0.015)
+  qqline(x,col="red",lwd=2)
+  abline(0,1,lty=2)
+  x<-dmp.txt$residuals$IWRES
+  maxiwr<-max(abs(x),na.rm=TRUE)
+
+
+  hist(x,prob=TRUE,breaks="FD",xlab="IWRES",main="",xlim=c(-maxiwr,maxiwr),
+       border=NA,col="grey75",cex=1.5,mgp=c(2,0.5,0),tck=-0.015)
+  box(bty="o")
+  lines(density(x,adjust=1.25),col="red",lwd=2)
+  abline(v=0,lty=1,lwd=1)
+  lines(density(rnorm(10000,mean=0,sd=1),adjust=2),lty=2,lwd=1)#,mean=mean(x),sd=sd(x))))
+
+  qqnorm(x,col=rgb(0,0,1,0.15),cex=1.5,main="",pch=16,
+         xlim=c(-maxiwr,maxiwr),ylim=c(-maxiwr,maxiwr),
+         mgp=c(2,0.5,0),tck=-0.015)
+  qqline(x,col="red",lwd=2)
+  abline(0,1,lty=2)
+  # source("csc_report.r")
+ # processData()
+ # pkpartab("./")
+ # gofplot("./")
+
+}
+

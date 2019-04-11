@@ -1,0 +1,23 @@
+Package: Certara.NLME8
+Title: Certara NLME package - Phoenix 8.2
+Version: 1.0.0
+Authors@R: person("Fred", "Soltanshahi", email = "fred.soltanshahi@certara.com", role = c("aut", "cre"))
+Description: Performs NLME runs locally/remote machines.
+    Supports Linux SGE/TORQUE grids
+    Linux Multicore runs
+    Linux individual runs
+    Windows Multicore runs
+    Windows individual runs
+Depends:
+    R (>= 3.3.3)
+License: Certara NLME/PML license is required.
+LazyData: true
+RoxygenNote: 6.1.0
+Suggests: testthat,
+          knitr,
+          rmarkdown
+Imports:
+    XML,
+    reshape,
+    methods,utils
+VignetteBuilder: knitr

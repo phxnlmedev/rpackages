@@ -1,0 +1,19 @@
+test(){
+	cfMicro(A1, Cl / V)
+	dosepoint(A1)
+	C = A1 / V
+	error(CEps = 0.0942729)
+	observe(CObs = C * (1 + CEps))
+	stparm(V = tvV * (wt/75)^dVdwt * exp(dVdsex1*(sex==1)) * exp(nV))
+	stparm(Cl = tvCl * (wt/75)^dCldwt * (age/40)^dCldage * exp(nCl))
+	covariate(sex())
+	covariate(wt)
+	covariate(age)
+	fixef(tvV = c(, 9.6764, ))
+	fixef(tvCl = c(, 0.13929, ))
+	fixef(dVdwt(enable=c(0)) = c(, 1.32004, ))
+	fixef(dCldwt(enable=c(1)) = c(, 1.17995, ))
+	fixef(dCldage(enable=c(2)) = c(, -0.461918, ))
+	fixef(dVdsex1(enable=c(3)) = c(, 0.101632, ))
+	ranef(diag(nV, nCl) = c(0.10608772, 0.082715079))
+}

@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548194396724.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4014746633",
+    "id" : "31FF59F6",
+    "lastKnownWriteTime" : 1554385867,
+    "last_content_update" : 1554385867,
+    "path" : "C:/Work/Next/PMLUtilities-Next/NLME7CommandLine/RPackages/RsNlme/R/procedure.r",
+    "project_path" : "R/procedure.r",
+    "properties" : {
+        "cursorPosition" : "10,2",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 20,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

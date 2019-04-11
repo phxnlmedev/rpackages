@@ -1,0 +1,5 @@
+id("xid")
+time("Time")
+covr(age<-"age")
+covr(wt<-"wt")
+obs(CObs<-"Conc")

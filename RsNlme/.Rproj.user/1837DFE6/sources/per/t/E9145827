@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1550171175093.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3948424169",
+    "id" : "E9145827",
+    "lastKnownWriteTime" : 1554385800,
+    "last_content_update" : 1554385800,
+    "path" : "C:/Work/Next/PMLUtilities-Next/NLME7CommandLine/RPackages/RsNlme/R/column_mapping.r",
+    "project_path" : "R/column_mapping.r",
+    "properties" : {
+        "cursorPosition" : "14,12",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 28,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

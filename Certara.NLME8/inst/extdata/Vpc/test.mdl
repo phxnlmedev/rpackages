@@ -1,0 +1,17 @@
+test(){
+	cfMicro(A1, Cl / V)
+	dosepoint(A1)
+	C = A1 / V
+	error(CEps = 0.32077)
+	observe(CObs = C * (1 + CEps))
+	stparm(V = tvV * exp(nV))
+	stparm(Cl = tvCl * (1+dCldsex1*(sex==1)) * (1+dCldrace1*(race==1)) * exp(nCl))
+	fcovariate(sex())
+	fcovariate(race())
+	fcovariate(dosing())
+	fixef(tvV = c(, 65.0913, ))
+	fixef(tvCl = c(, 5.14406, ))
+	fixef(dCldsex1(enable=c(0)) = c(, 1.06359, ))
+	fixef(dCldrace1(enable=c(1)) = c(, 1.25081, ))
+	ranef(diag(nV, nCl) = c(0.083851281, 0.1037997))
+}

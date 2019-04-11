@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1555001190950.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "373744236",
+    "id" : "964C52DD",
+    "lastKnownWriteTime" : 1555004419,
+    "last_content_update" : 1555004419540,
+    "path" : "C:/Work/Next/PMLUtilities-Next/NLME7CommandLine/RPackages/RsNlme/inst/Examples/PkPdExample.R",
+    "project_path" : "inst/Examples/PkPdExample.R",
+    "properties" : {
+        "cursorPosition" : "125,11",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 13,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

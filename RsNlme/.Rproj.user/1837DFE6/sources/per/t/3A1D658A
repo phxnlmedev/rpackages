@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1554478421636.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2223857734",
+    "id" : "3A1D658A",
+    "lastKnownWriteTime" : 1554994268,
+    "last_content_update" : 1554994268,
+    "path" : "C:/Work/Next/PMLUtilities-Next/NLME7CommandLine/RPackages/RsNlme/vignettes/RsNlme.Rmd",
+    "project_path" : "vignettes/RsNlme.Rmd",
+    "properties" : {
+        "cursorPosition" : "8,16",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

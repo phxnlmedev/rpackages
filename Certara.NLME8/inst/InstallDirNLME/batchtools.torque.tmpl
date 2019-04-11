@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#PBS -N <%= job.hash %> 
+#PBS -o <%= log.file %> 
+#PBS -j oe 
+#PBS -l walltime=<%= resources$walltime %>,nodes=<%= resources$nodes %>,vmem=<%= resources$memory %>
+#PBS -V
+
+## we merge R output with stdout from PBS, which gets then logged via -o option
+ 
+
+Rscript -e 'batchtools::doJobCollection("<%= uri %>")' 
+

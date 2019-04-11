@@ -1,0 +1,10 @@
+###cluster.functions = makeClusterFunctionsInteractive()
+cluster.functions = makeClusterFunctionsTorque("simple.tmpl.torque")
+mail.start = "none"
+mail.done = "none"
+mail.error = "none"
+db.driver = "SQLite"
+#db.options = list()
+db.options = list(pragmas = c("busy_timeout=5000", "journal_mode=WAL"))
+debug = FALSE
+fs.timeout=30

@@ -1,0 +1,605 @@
+library(shiny)
+library(shinyTree)
+library(shinyjs)
+
+# Define UI for random distribution app ----
+ui <- fluidPage(
+
+  # App title ----
+  titlePanel("RsNlme"),
+
+
+
+
+
+
+  # Sidebar layout with input and output definitions ----
+
+  sidebarLayout(
+
+
+    # Sidebar panel for inputs ----
+    sidebarPanel(position = "left",style = "border : 1px double gray;",
+            #     actionButton("folder","Select Workspace"),
+            #     hr(),
+             #    verbatimTextOutput("workspace"),
+                 shinyTree("tree")
+                 #
+                # shinyDirButton("workspace","Choose Workspace","Workspace",FALSE),
+                # hr(),
+                # "Currently Selected:",
+                # verbatimTextOutput("workspace"),
+                # hr(),
+                 #h4("output$dir"),
+                 #shinyTree("tree")
+
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(
+  #    navbarPage("",
+                 navbarPage("",id="navbarPage",
+                            navbarMenu("File",
+                                     tabPanel("Select Workspace",
+                                              actionButton("folder","Select Workspace"),
+                                              hr(),
+                                              verbatimTextOutput("workspace")),
+                                    tabPanel("New Folder",
+                                              textInput("NewFolder","Folder Name"),
+
+                                             actionButton("CreateFolder","Create")),
+                                     tabPanel("Exit",
+                                              actionButton("Exit","Exit?"),
+                                              actionButton("Cancel","Cancel"))
+
+),
+tabPanel(""),
+#navbarMenu("XXXX",
+#           tabPanel("YYYYYYY",
+#           actionButton("folder","Select yyyyy"),
+##$           hr(),
+# $          verbatimTextOutput("xxx")),
+#           tabPanel("ZZZZ",
+#                    actionButton("folder","Select zzzz"),
+#                    hr(),
+ #                   verbatimTextOutput("zzz"))),
+
+
+#navbarMenu("File"
+
+#),
+
+
+navbarMenu("Model",
+
+    tabPanel("New Model",
+             textInput("NewModelName","New Model Name"),
+             actionButton("CreateModel","Create")),
+    tabPanel("Copy Model",
+             textInput("CopyModelName","Model Name"),
+             checkboxInput("AcceptEstimates","Accept model estimates?"),
+             actionButton("CopyModel","Copy")),
+
+    tabPanel("Model Info",
+      tabsetPanel(type = "tabs",
+
+                  tabPanel("Structure",
+
+                           sidebarPanel(
+                             fluidRow(
+                              useShinyjs(),
+                               column(width = 4,
+                                      checkboxInput("Population","Population",value=TRUE)),
+
+                               column(width = 4,
+                                      selectInput("Type","",
+                                                  c("PK","Emax","PK/Emax","PK/Indirect","Linear","PK/Linear"))),
+
+                               column(width = 12, offset = 0 , style ='padding:0px;')
+
+
+
+
+                             ),
+                             fluidRow(
+                              # column(width = 3, checkboxInput("xxx","Poxxxpulation",value=TRUE)),
+                             column(width = 12,
+                             conditionalPanel(
+                               condition = "input.Type.indexOf('PK') > -1 ",
+                                fluidRow(style = "border : 1px double gray;",
+
+                                  column(width = 4,
+                                     selectInput("Parameterization","Parameterization",
+                                                 c("Micro","Clearance","Macro","Macro1"),
+                                                 selected = "Clearance")),
+                                  column(width = 4,
+                                     selectInput("Absorption","Absorption",
+                                                 c("Intravenous","Extravascular"))),
+                                 column(width = 4,
+                                     selectInput("Num_Components","Num_Components",
+                                                 c("1","2","3"))),
+                                 column(width = 4,
+                                     checkboxInput("ClosedForm","Closed form?",value=TRUE)),
+                                  column(width = 12, offset = 0 , style ='padding:0px;'),
+
+                                 column(width = 4,
+                                        checkboxInput("Tlag","tlag?",value=FALSE)),
+                                 column(width = 4,
+                                        checkboxInput("Infusions","Infusions possible?",value=FALSE)),
+
+                                 column(width = 4,
+                                        disabled(
+                                          checkboxInput("Duration","Duration",value=FALSE)
+                                        )
+                                       ),
+                                 column(width = 12, offset = 0 , style ='padding:0px;'),
+
+
+                                  column(width = 4, offset = 0,
+                                     checkboxInput("Elimination","Elim Cpt?",value=FALSE)),
+                                  column(width = 4,
+                                     disabled(
+                                       checkboxInput("EliminationFe","Fe ?",value=FALSE)
+                                       )
+                                     ),
+                                  column(width = 12, offset = 0 , style ='padding:0px;'),
+                                  column(width = 12,
+                                   conditionalPanel(
+                                     condition = "input.Parameterization == 'Clearance'",
+                                       checkboxInput("Saturating","Saturating ?",value=FALSE))
+                                  ),
+                                 column(width = 12,
+                                    conditionalPanel(
+                                      condition = "input.Parameterization == 'Micro'",
+
+                                     checkboxInput("KaEqualFa","Ka Equal Fa ?",value=FALSE))
+                                  ),
+                                  column(width = 12,
+                                     conditionalPanel(
+                                       condition = "input.Type != 'PK'",
+
+                                       checkboxInput("Effect","Has Effect Compartment?",value=FALSE))
+                                   ),
+                                   column(width = 12,
+                                       conditionalPanel(
+                                        condition = "input.Type != 'PK'",
+
+                                        checkboxInput("PkFrozen","Freeze PK?",value=FALSE)
+                                        )
+                              )
+
+                            )
+                           ),
+
+                             conditionalPanel(
+                               condition = "input.Type.indexOf('Emax') > -1 ",
+                               fluidRow(style = "border : 1px double gray;",
+                                 column(width = 4,
+                                        checkboxInput("Baseline","Baseline",value=FALSE)),
+                                 column(width = 4,
+                                        checkboxInput("Inhibitory","Inhibitory",value=FALSE)),
+                                 column(width = 4,
+                                        checkboxInput("Sigmoid","Sigmoid",value=FALSE)),
+                                 column(width = 4,
+                                        disabled(
+                                          checkboxInput("Fractional","Fractional",value=FALSE)
+                                          )
+                                        ),
+                                 column(width = 12,
+                                        conditionalPanel(
+                                          condition = "input.Type != 'Emax'",
+
+                                          checkboxInput("EmaxFrozen","Freeze Emax?",value=FALSE))
+                                 ),
+                                 column(width = 12, offset = 0 , style ='padding:0px;')
+                               )
+                             ),
+                            conditionalPanel(
+                                condition = "input.Type.indexOf('Linear') > -1 ",
+                                fluidRow(style = "border : 1px double gray;",
+                                         column(width = 12,
+                                                selectInput("Linear","",
+                                                  c("E = Alpha","E = Alpha + Beta*C","E = Alpha + Beta*C +Gam*C^2"))),
+                                         column(width = 12,
+                                                conditionalPanel(
+                                                  condition = "input.Type != 'Linear'",
+
+                                                  checkboxInput("LinearFrozen","Freeze Linear?",value=FALSE))
+                                         ),
+                                         column(width = 12, offset = 0 , style ='padding:0px;')
+                                )
+                              ),
+                           conditionalPanel(
+                             condition = "input.Type.indexOf('Indirect') > -1 ",
+                             fluidRow(style = "border : 1px double gray;",
+                                      column(width = 4,
+                                             selectInput("Indirect","",
+                                                         c("Stim. Limited","Stim. Infinite","Inhib. Limited",
+                                                           "Inhib. Inverse","Stim. Linear","Stim. Log Linear"))),
+                                      column(width = 4,
+                                             selectInput("LossBuidup","",
+                                                         c("Loss","Build-up"))),
+                                      column(width = 4,
+                                             selectInput("Exponent","",
+                                                         c("Exponent","no Exponent"))),
+                                      column(width = 12,
+                                             conditionalPanel(
+                                               condition = "input.Type != 'Indirect'",
+
+                                               checkboxInput("IndirectFrozen","Freeze Indirect?",value=FALSE))
+                                      ),
+                                      column(width = 12, offset = 0 , style ='padding:0px;')
+                             )
+                           ),
+                           conditionalPanel(style ='padding:1px;',
+                             condition = "input.Type.indexOf('PK') > -1 ",
+                             fluidRow(style = "border : 1px double gray;padding:0px;",
+                                      column(width = 1,
+                                             br(),
+                                             h6("C")),
+                                      column(width= 2,
+                                             textInput("CObs","",value="Cobs")),
+                                      column(width= 2,
+                                             textInput("CEps","",value="CEps")),
+                                      column(width = 1,
+                                             br(),
+                                             h6("=")),
+                                      column(width = 3 ,
+                                             selectInput("CErrStyle","",
+                                                         c("Additive", "Log-Additive","Multiplicative","Add+Mult",
+                                                           "Mix Ratio","Power","Custom"))),
+                                      br(),
+                                      column(width=3,
+                                             checkboxInput("CBQL","BQL?",value=FALSE)),
+                                      column(width = 12, offset = 0 , style ='padding:0px;'),
+                                      column(width=3,
+                                             br(),
+                                             h6("Stdev:")),
+                                      column(width= 4,
+                                             textInput("CStdev","",value="1")),
+
+                                      column(width=3,
+                                             br(),
+                                             checkboxInput("CFreeze","Freeze",value=FALSE)),
+                                      column(width = 12, offset = 0 , style ='padding:0px;'),
+                                      conditionalPanel(
+                                        condition = "input.CErrStyle == 'Add+Mult' ",
+                                      column(width=3,
+                                             br(),
+                                             h6("Mult Stdev:")),
+                                      column(width= 6,
+                                             textInput("CDefinition","",value="CMultStdev"))
+
+                                      ),
+                                      conditionalPanel(style ='padding:1px;',
+                                        condition = "input.CErrStyle == 'Mix Ratio' ",
+                                        column(width=3,
+                                               br(),
+                                               h6("mix Ratio:")),
+                                        column(width= 6,
+                                               textInput("CDefinition","",value="CMixRatio"))
+
+                                      ),
+                                      conditionalPanel(
+                                        condition = "input.CErrStyle == 'Custom' ",
+                                        column(width=3,
+                                               br(),
+                                               h6("Definition:")),
+                                        column(width= 6,
+                                               textInput("CDefinition","",value=""))
+
+                                      ),
+                                      conditionalPanel(
+                                        condition = "input.CErrStyle == 'Power' ",
+                                        column(width=3,
+                                               br(),
+                                               h6("Power:")),
+                                        column(width= 6,
+                                               textInput("CDefinition","",value="0"))
+
+                                      )
+
+                                      )
+                           ),
+                           conditionalPanel(style ='padding:1px;',
+                                            condition = "input.Type.indexOf('Emax') > -1 ",
+                                            fluidRow(style = "border : 1px double gray;padding:0px;",
+                                                     column(width = 1,
+                                                            br(),
+                                                            h6("E")),
+                                                     column(width= 2,
+                                                            textInput("EObs","",value="Eobs")),
+                                                     column(width= 2,
+                                                            textInput("EEps","",value="EEps")),
+                                                     column(width = 1,
+                                                            br(),
+                                                            h6("=")),
+                                                     column(width = 3 ,
+                                                            selectInput("EErrStyle","",
+                                                                        c("Additive", "Log-Additive","Multiplicative","Add+Mult",
+                                                                          "Mix Ratio","Power","Custom"))),
+                                                     br(),
+                                                     column(width=3,
+                                                            checkboxInput("EBQL","BQL?",value=FALSE)),
+                                                     column(width = 12, offset = 0 , style ='padding:0px;'),
+                                                     column(width=3,
+                                                            br(),
+                                                            h6("Stdev:")),
+                                                     column(width= 4,
+                                                            textInput("EStdev","",value="1")),
+
+                                                     column(width=3,
+                                                            br(),
+                                                            checkboxInput("EFreeze","Freeze",value=FALSE)),
+                                                     column(width = 12, offset = 0 , style ='padding:0px;'),
+                                                     conditionalPanel(
+                                                       condition = "input.CErrStyle == 'Add+Mult' ",
+                                                       column(width=3,
+                                                              br(),
+                                                              h6("Mult Stdev:")),
+                                                       column(width= 6,
+                                                              textInput("EDefinition","",value="EMultStdev"))
+
+                                                     ),
+                                                     conditionalPanel(style ='padding:1px;',
+                                                                      condition = "input.EErrStyle == 'Mix Ratio' ",
+                                                                      column(width=3,
+                                                                             br(),
+                                                                             h6("mix Ratio:")),
+                                                                      column(width= 6,
+                                                                             textInput("EDefinition","",value="EMixRatio"))
+
+                                                     ),
+                                                     conditionalPanel(
+                                                       condition = "input.EErrStyle == 'Custom' ",
+                                                       column(width=3,
+                                                              br(),
+                                                              h6("Definition:")),
+                                                       column(width= 6,
+                                                              textInput("EDefinition","",value=""))
+
+                                                     ),
+                                                     conditionalPanel(
+                                                       condition = "input.EErrStyle == 'Power' ",
+                                                       column(width=3,
+                                                              br(),
+                                                              h6("Power:")),
+                                                       column(width= 6,
+                                                              textInput("EDefinition","",value="0"))
+
+                                                     )
+
+                                            )
+                           ),
+                                      column(width = 12, offset = 0 , style ='padding:0px;')
+                             )
+                           )
+
+                             , width = 12 )
+
+                  ),
+                  tabPanel("Parameters", plotOutput("plot")),
+                  tabPanel("InputOptions", verbatimTextOutput("summary")),
+                 # tabPanel("InitialEstimates", tableOutput("table")),
+                 # tabPanel("RunOptions", tableOutput("table")),
+                 # tabPanel("ModelText", tableOutput("table")),
+                  tabPanel("Plots", tableOutput("table"))
+
+
+      )
+    ) # end of model info menu
+)  # ,# end of model menu
+#navbarMenu("Run",
+#           tabPanel("Compute Platforms",
+
+ #                   verbatimTextOutput("workspace")),
+   #       tabPanel("Engine Definition",
+    #                verbatimTextOutput("workspace")),
+    #       tabPanel("Execute",
+   #                 verbatimTextOutput("workspace"))
+
+#)  #,# end of Run menu
+#navbarMenu("Results",
+ #          tabPanel("Reports",
+
+   #                 verbatimTextOutput("workspace")),
+    #       tabPanel("Graphs",
+
+   #                 verbatimTextOutput("workspace"))
+#)  # ,# end of Results menu
+
+    ) # end of navbarPage
+#  ) #end of outer navbarPage!!!
+) # end of main panel
+) # end of sidebarPanel
+) # end of fluidPage
+
+
+# Define server logic for random distribution app ----
+server <- function(input, output, session) {
+
+  workspaceLoc=reactiveVal("")
+
+  observeEvent(input$Exit, {
+
+    print("Exit pressed")
+    stopApp(-1)
+  })
+
+  observeEvent(input$File, {
+    browser()
+    print("Exit pressed")
+  })
+
+  #  location=""
+#  print(getwd())
+#  shinyDirChoose(input, 'workspace', roots= c(CWD = getwd(), home = "~"), defaultRoot = 'CWD'  )
+#  workspace <- reactive(input$workspace)
+#  #output$workspace <- renderPrint(dir())
+ # output$workspace <- renderPrint(workspace()$path[[length(workspace()$path)]])
+
+  #print(paste0("workspace Root is ",dir))
+  observeEvent(input$folder, {
+
+    location = workspaceLoc()
+
+    if ( is.null(location ) || length(location) == 0 )
+      location="./"
+    newLocation=choose.dir(default=location, caption="Select Workspace")
+    if ( ! is.na(newLocation) ) {
+
+      if ( newLocation != location ) {
+        location=newLocation
+        workspaceLoc(location)
+        output$workspace <-renderPrint(location)
+      }
+    }
+
+  })
+
+  output$tree <- renderTree({
+
+    dir=reactive(input$folder)
+
+    location = workspaceLoc()
+
+    if ( is.null(location ) || location == "" )
+      location="./"
+
+    print(paste0("----<<<<<",location,">>>>>>>-----"))
+    paths=paste0(location,"/",list.dirs(location,full.names=FALSE))
+
+    mytree <- data.tree::as.Node(data.frame(pathString=paths))
+
+    as.list(mytree)
+
+  })
+
+  output$selTxt <- renderText({
+    tree <- input$tree
+    if (is.null(tree)){
+      "None"
+    } else{
+      unlist(lapply(get_selected(tree),function(node){
+        paste("Info for",node,":",attr(node, "stinfo"))
+      }))
+    }
+  })
+
+  observeEvent(input$Baseline,{
+
+    if ( input$Baseline == FALSE ){
+      shinyjs::disable(id = "Fractional")
+    }
+    else
+      shinyjs::enable(id = "Fractional")
+  })
+
+
+  observeEvent(input$Saturating,{
+
+    if ( input$Saturating == TRUE ){
+      updateCheckboxInput(session, "ClosedForm", value = FALSE)
+      shinyjs::disable(id = "ClosedForm")
+    }
+    else
+      shinyjs::enable(id = "ClosedForm")
+  })
+
+  observeEvent(input$Parameterization,{
+
+    print(input$Parameterization )
+    if ( input$Parameterization == 'Macro' || input$Parameterization == 'Macro1' ){
+      updateCheckboxInput(session, "ClosedForm", value = FALSE)
+      shinyjs::disable(id = "ClosedForm")
+    }
+    else
+      shinyjs::enable(id = "ClosedForm")
+  })
+  observeEvent(input$Elimination,{
+
+    if ( input$Elimination == FALSE ){
+
+      shinyjs::disable(id = "EliminationFe")
+    }
+    else
+      shinyjs::enable(id = "EliminationFe")
+  })
+
+  observeEvent(input$Infusions,{
+
+    if ( input$Infusions == FALSE ){
+
+      shinyjs::disable(id = "Duration")
+    }
+    else
+      shinyjs::enable(id = "Duration")
+  })
+
+  # Reactive expression to generate the requested distribution ----
+  # This is called whenever the inputs change. The output functions
+  # defined below then use the value computed from this expression
+  d <- reactive({
+    dist <- switch(input$dist,
+                   norm = rnorm,
+                   unif = runif,
+                   lnorm = rlnorm,
+                   exp = rexp,
+                   rnorm)
+
+    dist(input$n)
+  })
+
+  # Generate a plot of the data ----
+  # Also uses the inputs to build the plot label. Note that the
+  # dependencies on the inputs and the data reactive expression are
+  # both tracked, and all expressions are called in the sequence
+  # implied by the dependency graph.
+  output$plot <- renderPlot({
+    dist <- input$dist
+    n <- input$n
+
+    hist(d(),
+         main = paste("r", dist, "(", n, ")", sep = ""),
+         col = "#75AADB", border = "white")
+  })
+
+  # Generate a summary of the data ----
+  output$summary <- renderPrint({
+    summary(d())
+  })
+
+  output$Blank <- renderText({ paste0(" xxx \n")})
+  # Generate an HTML table view of the data ----
+  output$table <- renderTable({
+    d()
+  })
+
+
+
+
+
+
+
+
+
+
+
+  output$Dump <- renderUI({
+
+    tagList(
+
+    renderText(paste0("TYPE is ", input$Type)),
+    renderText(paste0("Infusions ",input$Infusions ))
+    )
+  })
+
+
+
+}
+
+
+setwd("D:\\SDCard\\NlmeInstall_04_30_18\\Pml")
+
+# Create Shiny app ----
+shinyApp(ui, server)

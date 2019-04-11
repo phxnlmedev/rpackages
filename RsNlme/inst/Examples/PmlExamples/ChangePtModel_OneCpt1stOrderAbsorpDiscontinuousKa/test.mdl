@@ -1,0 +1,60 @@
+##############################################################################################################
+##                              Description
+##
+## The purpose of this file is to demonstrate how to implement a change-point model using PML. 
+## The model demonstrated is a one-compartment model with 1st-order absorption, 
+## where the absorption rate changes its value at some time after each dosing event. 
+##
+##############################################################################################################
+test(){
+	# ================= PK model =================================================
+	# absorption compartment 
+	deriv(Aa = - Ka * Aa)
+	dosepoint(Aa)
+	
+	# central compartment 
+	deriv(A1 = Ka * Aa - Cl * C)
+	
+	# drug concentration at the central compartment 
+	C = A1 / V
+
+	
+	# ==================== Model parameters =============================================
+	# covariates 
+	covariate(DosingInterval)
+	
+	# structural model parameters 
+	stparm(V = tvV * exp(nV)) # central volume distribution 
+	stparm(Cl = tvCl * exp(nCl)) # central clearance 
+	stparm(Ka_bChangePt = tvKa_bChangePt * exp(nKa_bChangePt)) # absorption rate before 
+	stparm(Ka_aChangePt = tvKa_aChangePt * exp(nKa_aChangePt)) # absorption rate after 
+	stparm(TimePt_KaChange = tvTimePt_KaChange * exp(nTimePt_KaChange)) # time point where Ka changes its value
+	
+	# fixed effects 
+	fixef(tvV = c(, 100, ))
+	fixef(tvCl = c(, 10, ))
+	fixef(tvKa_bChangePt = c(, 0.01, ))
+	fixef(tvKa_aChangePt = c(, 0.1, ))
+	fixef(tvTimePt_KaChange = c(, 5, ))
+	
+	# random effects 
+	ranef(diag(nV, nCl, nKa_bChangePt, nKa_aChangePt, nTimePt_KaChange) 
+			= c(0.01, 0.01, 0.01, 0.01, 0.01)
+		)
+	
+	
+	# absorption rate
+	double(Ka)
+	sequence{
+		while(1) {
+			Ka = Ka_bChangePt
+			sleep(TimePt_KaChange)
+			Ka = Ka_aChangePt
+			sleep(DosingInterval - TimePt_KaChange)
+		}	
+	}
+	
+	# ================== Residual error model =======================================
+	error(CEps = 0.1)	
+	observe(CObs = C * (1 + CEps))
+}

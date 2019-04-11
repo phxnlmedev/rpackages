@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1547237637514.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3185545878",
+    "id" : "CF702BDE",
+    "lastKnownWriteTime" : 1554387677,
+    "last_content_update" : 1554387677,
+    "path" : "C:/Work/Next/PMLUtilities-Next/NLME7CommandLine/RPackages/RsNlme/R/estimates.r",
+    "project_path" : "R/estimates.r",
+    "properties" : {
+        "cursorPosition" : "626,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

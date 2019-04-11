@@ -1,0 +1,3 @@
+ /m 1 /n 100 /o 6 /e -1 -xnp 0 -anagrad 0 -logtran 1 -xrestart 0 -xnorderagq 1 -xfocehess 0 -xverbose 1 -xpresample 0 -xmapnp 0 -xisample 300 -xmapassist 0 -ximpsampdof 0 -xmcpem 0 -xpemrunall 0 -xsirsamp 10 -xburnin 0 -xnonomegaburn 0 -xstartfromsavedposteriors 0 -xaccratio 0.1 -xscramble 1 -xstderr 1 -xlameth 1 -xlandig 7 -xlatol 0.01 -xblmeth 1 -xblndig 13 -xbltol 0.002 -rtol 1E-06 -atol 1E-06 -nmxstep 50000 -sort  -csv 
+ /e -1 
+ cols1.txt data1.txt out000001.txt

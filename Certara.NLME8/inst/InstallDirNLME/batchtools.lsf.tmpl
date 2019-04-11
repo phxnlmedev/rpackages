@@ -1,0 +1,15 @@
+
+## Default resources can be set in your .batchtools.conf.R by defining the variable
+## 'default.resources' as a named list.
+
+
+
+#BSUB-o <%= log.file %>                             # Output is sent to logfile, stdout + stderr by default
+
+#BSUB-n <%= resources$nodes %>
+
+## Export value of DEBUGME environemnt var to slave
+export DEBUGME=<%= Sys.getenv("DEBUGME") %>
+
+
+Rscript -e "batchtools::doJobCollection('<%= uri %>')"

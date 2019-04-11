@@ -1,0 +1,17 @@
+Package: RsNlme
+Title: To create NLME Models from R
+Version: 1.0.0
+Authors@R: person("Fred", "Soltanshahi", email = "fred.soltanshahi@certara.com", role = c("aut", "cre"))
+Description: Creates PML models used for PK/PD fitting and simulation.
+Depends: R (>= 3.3.3)
+License: LGPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
+Suggests: xpose, Xpose.Nlme,
+    knitr,
+    rmarkdown
+Imports:
+    Certara.NLME8,
+    shiny, methods, utils, ggplot2, graphics
+VignetteBuilder: knitr

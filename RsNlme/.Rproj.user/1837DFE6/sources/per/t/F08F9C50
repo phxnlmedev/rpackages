@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1550166482708.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3090448612",
+    "id" : "F08F9C50",
+    "lastKnownWriteTime" : 1550171306,
+    "last_content_update" : 1550171304157,
+    "path" : "D:/SDCard/NlmeInstall_04_30_18/Pml/Pheno.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "23,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 27,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

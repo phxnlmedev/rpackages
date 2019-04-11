@@ -1,0 +1,5 @@
+test.mdl
+test.mdl cols1.txt data1.txt 
+*.csv *.txt *.log *.LOG
+1
+scenario1,nlmeargsCombined.txt:1,,out0001.txt,,dmp.txt iniest.csv IdEta.txt EtaEta.txt EtaCov.txt StrCov.txt EtaShrinkageBySubject.txt progress.txt doses.csv 

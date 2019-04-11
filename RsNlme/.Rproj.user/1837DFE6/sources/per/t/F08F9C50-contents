@@ -1,0 +1,99 @@
+library(ggplot2)
+library(xpose)
+library(Certara.NLME8)
+library(RsNlme)
+
+Sys.setenv("NLME_ROOT_DIRECTORY"="C:/RsNlmeInstall")
+Sys.setenv("INSTALLDIR"="C:/RsNlmeInstall/InstallDirNLME")
+Sys.setenv("NLME_HASH"="1414587359")
+setwd("C:/RsNlmeInstall/Test")
+
+engineParams = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_ELS,
+                                     PARAMS_NUM_ITERATIONS=1000,
+                                     PARAMS_SAND="TRUE")
+
+host = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
+                        parallelMethod=NlmeParallelMethod("LOCAL_MPI"),
+                        hostName="MPI",
+                        numCores=4)
+
+multihost = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
+                             parallelMethod=NlmeParallelMethod("MULTICORE"),
+                             hostName="MULTICORE",
+                             numCores=4)
+
+
+
+
+input=read.csv("C:/RsNlmeInstall/Test/pheno.csv")
+
+model = pkmodel(numComp=1,
+                    isPopulation=TRUE,
+                    absorption = Intravenous,
+                    parameterization = Micro,
+                    modelName="PhenoModel",
+                    isTlag = FALSE,
+                    hasEliminationComp = FALSE,
+                    isClosedForm = TRUE)
+
+
+dataset=NlmeDataset()
+
+sex=categoricalCovariate("sex",c(1,2),c("female","male"))
+
+wt=NlmeCovariateParameter("wt",
+#                              centerValue="70",
+                              continuousType=CovarNumber,
+                              isPositive=TRUE,
+                              direction=Forward)
+
+apgr=NlmeCovariateParameter("apgr",
+                              #                              centerValue="70",
+                              continuousType=CovarNumber,
+                              isPositive=TRUE,
+                              direction=Forward)
+
+model=addCovariates(model,
+                    c(wt,apgr),
+                    c("V"="wt,apgr",
+                      "ke"="wt"))
+
+initFixedEffects(model)=c(tvV=1.39323,tvKe=0.00487411,tvdVdwt=0,tvdKedwt=0,tvdVdapgr=0)
+initRandomEffects(model)=c(Block,FALSE,"nV,nKe","0.15518002, 0.035831751, 0.011156788")
+
+initColMapping(model)=input
+print(RsNlme::modelColumnMapping(model))
+#print(columnNames(dataset))
+print(modelVariableNames(model))
+
+modelColumnMapping(model)=c(ID="xid", CObs="yobs",A1="dose","wt"="wt")
+
+#
+# Setup multiplicative error model with doafter code
+#
+#residualEffect(model,"C")=c(errorType=Multiplicative, SD="0.1",doafter="{ A0 = 0}")
+
+#model=generatePML(model)
+
+#
+# Write out default model and mapping files and do the fitting
+#
+
+writeDefaultFiles(model,dataset)
+estimatesUI(model,unique(input$xid),host)
+
+
+job=fitmodel(multihost,dataset,engineParams)
+
+covarModel = copyModel(model,modelName="CovarModel")
+
+writeDefaultFiles(covarModel,dataset)
+# Run a stepwise covariate search
+#
+sp = NlmeStepwiseParams(0.01, 0.001, "-2LL")
+
+job=stepwiseSearch(multihost,
+                   dataset,
+                   engineParams,
+                   covariateModel(covarModel),
+                   sp)

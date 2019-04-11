@@ -1,0 +1,17 @@
+test(){
+	deriv(Aa = - Ka * Aa)
+	deriv(A1 = Ka * Aa - Ke * A1)
+	dosepoint(Aa)
+	C = A1 / V
+	error(CEps = 1)
+	observe(CObs = C + CEps * sqrt(1 + C^2 * (CMultStdev/sigma())^2))
+	stparm(Ka = tvKa * exp(nKa))
+	stparm(V = tvV * exp(nV))
+	stparm(Ke = tvKe * exp(nKe))
+	stparm(CMultStdev = tvCMultStdev)
+	fixef(tvKa = c(, 1, ))
+	fixef(tvV = c(, 1, ))
+	fixef(tvKe = c(, 1, ))
+	fixef(tvCMultStdev = c(, 1, ))
+	ranef(diag(nV, nKe, nKa) = c(1, 1, 1))
+}

@@ -1,0 +1,24 @@
+test(){
+	deriv(Aa = - Ka * Aa)
+	deriv(A1 = Ka * Aa - Ke * A1)
+	dosepoint(Aa)
+	C = A1 / V
+	error(CEps = 1)
+	observe(CObs = C + CEps)
+	stparm(Ka = tvKa * exp(nKa))
+	stparm(V = tvV * wt^dVdwt * exp(nV))
+	stparm(Ke = tvKe * age^dKedage * exp(nKe))
+	fcovariate(age)
+	fcovariate(wt)
+	fixef(tvKa = c(, 1, ))
+	fixef(tvV = c(, 1, ))
+	fixef(tvKe = c(, 1, ))
+	fixef(dKedage(enable=c(0)) = c(, 0, ))
+	fixef(dVdwt(enable=c(1)) = c(, 0, ))
+	ranef(diag(nV, nKe, nKa) = c(1, 1, 1))
+}
+override test(){
+  fixef(tvKa = c(,0.978565,))
+  fixef(tvV = c(,0.976264,))
+  fixef(tvKe = c(,0.985159,))
+}
