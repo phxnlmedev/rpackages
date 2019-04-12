@@ -20,10 +20,16 @@ RsNLME provides users with the ability to define PK/PD models in R environment u
 
 ## Installation guide
 
-## Install MPICH2 and gcc
+## Install MPICH2 and gcc(On machines without a Phoenix installation)
 
 - MPICH2 enables usage of multiple CPUs and CPU cores. MPI version is 1.4.1p1 is required and can be downloaded from: http://www.mpich.org/downloads/versions/mpich2-1.4.1.p1-win-x86-64.msi
 - The gcc 4.9.2 compiler is used to create PML (Phoenix Modeling Language) models. This compiler is required and can be downloaded from: https://sourceforge.net/projects/mingw-w64/
+- The following environment variables needs to be set :
+
+set PhoenixGCCDir64= C:\\Program Files\\mingw-w64\\x86_64-4.9.2-posix-seh-rt_v4-rev4\\mingw64
+
+set PhoenixMPIDir64= C:\\Program Files\\MPICH2
+
 
 ## Install the R libraries
 
