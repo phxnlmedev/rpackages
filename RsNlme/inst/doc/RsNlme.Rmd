@@ -1,0 +1,230 @@
+---
+title: "RsNlme"
+author: "Fred Soltanshahi"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>"
+)
+```
+
+RsNLME provides users with the ability to define PK/PD models in R environment utilizing PML (Phoenix Modeling Language) and the NLME engine to perform fitting/simulaton on those models.
+
+## Installation guide
+
+## Install MPICH2 and gcc(On machines without a Phoenix installation)
+
+- MPICH2 enables usage of multiple CPUs and CPU cores. MPI version is 1.4.1p1 is required and can be downloaded from: http://www.mpich.org/downloads/versions/mpich2-1.4.1.p1-win-x86-64.msi
+- The gcc 4.9.2 compiler is used to create PML (Phoenix Modeling Language) models. This compiler is required and can be downloaded from: https://sourceforge.net/projects/mingw-w64/
+- The following environment variables needs to be set :
+
+set PhoenixGCCDir64= C:\\Program Files\\mingw-w64\\x86_64-4.9.2-posix-seh-rt_v4-rev4\\mingw64
+
+set PhoenixMPIDir64= C:\\Program Files\\MPICH2
+
+
+## Install the R libraries
+
+If the following R libraries are already installed, skip this step. Otherwise, run the R program as the administrator and use the Packages > Install Packages menu option to install the following libraries.
+
+- ggplot2
+- reshape
+- ssh
+- XML
+- ggforce
+- tidyr
+- shiny
+- shinyjs
+- Xpose 
+
+  If you are going to run the test example provided in the last step of this document, you will also need to install the following libraries:
+
+- data.table
+- vpc
+
+## Install the Certara R packages
+
+Three packages from Certara also need to be installed in R .  Use devtools package to install these from github.
+
+- library(devtools)
+- install_github(\"phxnlmedev/rpackages/Certara.NLME8\")
+- install_github(\"phxnlmedev/rpackages/Xpose.Nlme\")
+- install_github(\"phxnlmedev/rpackages/RsNlme\")
+
+## Setup enviornment to execute NLME engine
+
+### Default Installation Location of NLME libraries
+Sys.setenv(\"INSTALLDIR\"=\"C:/Program Files/R/R-3.5.1/library/Certara.NLME8/InstallDirNLME\")
+
+### NLME engine license obtained from support@certara.com
+Sys.setenv(\"PhoenixLicenseFile\"=\"D:\\\\SDCard\\\\NlmeInstall_04_30_18\\\\lservrc\")
+
+### NLME engine work directory
+Sys.setenv(\"NLME_ROOT_DIRECTORY\"=\"D:/SDCard/NlmeInstall_04_30_18\")
+
+## Examples and Datasets
+
+Examples and corresponding datasets are intalled in C:/Program Files/R/R-3.5.1/library/RsNlme/Examples
+
+- Copy PKExample.R and 16subjects.csv to a working directory
+- Load PKExample.R from RStudio(RGUI)
+- Run code
+
+# PKExample.R
+
+\# Load libraries and setup paths and hosts
+
+library(ggplot2)
+
+library(xpose)
+
+library(Certara.NLME8)
+
+library(RsNlme)
+
+library(shiny)
+
+
+\# goto your working directory where you copied the demo files
+
+setwd("D:/SDCard/RsNlmeWorkDirectory")
+
+\# setup environment
+
+Sys.setenv("NLME_ROOT_DIRECTORY"=\"c:/Work/RsNlmeWorkDirectory\")
+
+Sys.setenv("INSTALLDIR"="C:/Program Files/R/R-3.5.1/library/Certara.NLME8/InstallDirNLME")
+
+Sys.setenv("PhoenixLicenseFile"="C:\\Program Files (x86)\\Pharsight\\Phoenix\\application\\Services\\Licensing\\lservrc")
+
+\# Look at the input data
+
+input=read.csv("16subjects.csv")
+
+View(input)
+
+\# Graph time vs. Conc
+
+df=data.frame(time=input\$Act_Time,conc=input\$Conc,subject=input\$Subject)
+
+ggplot(data=df,aes(x=time,y=conc))+scale_y_log10()+
+       geom_point(colour=df\$subject)+
+       geom_line(aes(x=df\$time,y=df\$conc,group=df\$subject,colour=df\$subject))
+
+
+\# Format the input file and add a gender_code for the model
+
+colnames(input)
+
+input\$Gender_Code=as.numeric(input\$Gender)
+
+\# Statistics on possible covariates
+
+mean(input\$Age)
+
+mean(input\$BodyWeight)
+
+\# A 2 Compartment population PK model with intravaneous observation
+
+\#   Help is avaialble by typing \?pkmodel
+
+model = pkmodel(numComp=2,
+                isPopulation=TRUE,
+                absorption = Intravenous,
+                modelName="InitialModel")
+
+\# Looks at model variables and map them to data columns
+
+dataset=NlmeDataset()
+
+initColMapping(model)=input
+
+#modelColumnMapping(model)
+#colnames(input)
+#print(modelVariableNames(model))
+
+modelColumnMapping(model)=c(id="Subject", CObs="Conc",A1="Amount")
+
+\# Change error model
+
+residualEffect(model,"C")=c(errorType=Multiplicative,SD="0.16")
+
+
+\# Set initial estimates on model variables
+
+\# initFixedEffects(model)=c(tvV=16,tvCl=7,tvV2=41,tvCl2=14)
+
+\# Write out default model and mapping files
+
+writeDefaultFiles(model,dataset)
+
+\# Where to execute fitting
+
+host = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
+
+                        parallelMethod=NlmeParallelMethod("LOCAL_MPI"),
+
+                        hostName="MPI",
+
+                        numCores=4)
+
+
+\# Evaluate the model and pick reasonable initial values for fixed effects
+
+estimatesUI(model,unique(input\$Subject),host)
+
+\# Accept initial estimates picked from shiny app
+
+effects=getInitialEstimates()
+
+initFixedEffects(model) = effects
+
+print(model)
+
+\# If you need to edit any of the generated files
+
+\# model2=RsNlme::editModel(model,dataset)
+
+\# NLME engine to use
+
+engineParams = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_ELS,
+
+                                     PARAMS_NUM_ITERATIONS=1000,
+
+                                     PARAMS_SAND="TRUE")
+
+\# Do the model fitting
+
+job=fitmodel(host,dataset,engineParams)
+
+
+
+library(xpose)
+
+library(Xpose.Nlme)
+
+xp=xposeNlme(dir="./",modelName="Initial Model")
+
+list_vars(xp)
+
+doxpose(xp)
+
+dv_vs_pred(xp)
+
+res_vs_pred(xp,res="CWRES",type="ps")
+
+res_vs_idv(xp,res="CWRES",type="ps")
+
+ind_plots(xp)
+
+eta_distrib(xp)
+
+eta_qq(xp)
