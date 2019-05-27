@@ -110,7 +110,7 @@ engineParams = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_ELS,
 #
 # Do the model fitting
 #
-job=fitmodel(host,dataset,engineParams)
+job=fitmodel(host,dataset,engineParams,model)
 
 
 #
@@ -189,15 +189,20 @@ modelColumnMapping(covarModel)=c(id="Subject", CObs="Conc",A1="Amount","sex"="Ge
 # Run a stepwise covariate search
 #
 sp = NlmeStepwiseParams(0.01, 0.001, "-2LL")
-
+mhost = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
+                        installationDirectory = Sys.getenv("INSTALLDIR"),
+                        parallelMethod=NlmeParallelMethod("MULTICORE"),
+                        hostName="MPI",
+                        numCores=4)
 #
 # remote execution on the grid
 #
-job=stepwiseSearch(host,
+job=stepwiseSearch(mhost,
                       dataset,
                       engineParams,
                       covariateModel(covarModel),
                       sp,
+                      covarModel,
                       runInBackground = FALSE )
 print(job)
 
@@ -222,7 +227,7 @@ covariateEffect(covarModel,"age","V")=COVAR_EFF_YES
 #
 covarModel=generatePMLModel(covarModel)
 
-job=fitmodel(host,dataset,engineParams,runInBackground = FALSE)
+job=fitmodel(host,dataset,engineParams,covarModel,runInBackground = FALSE)
 
 #
 # Analyze results
@@ -238,12 +243,6 @@ eta_distrib(xp, type = 'h')
 
 cov_qq(xp)
 
-
-mhost = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
-                        installationDirectory = Sys.getenv("INSTALLDIR"),
-                        parallelMethod=NlmeParallelMethod("MULTICORE"),
-                        hostName="MULTICORE",
-                        numCores=4)
 
 #
 # Validate the model with bootstrap
@@ -263,7 +262,7 @@ boot = NlmeBootstrapParams(numReplicates=15,
 #
 # Run a bootstrap job
 #
-job=bootstrap(mhost,dataset,engineParams,boot,runInBackground = FALSE)
+job=bootstrap(mhost,dataset,engineParams,boot,bootModel,runInBackground = FALSE)
 
 print(job)
 
@@ -310,7 +309,7 @@ vpc = NlmeVpcParams(numReplicates=1000,
 print(vpcModel)
 writeDefaultFiles(vpcModel,dataset,vpc)
 
-job=vpcmodel(host,dataset,vpc,runInBackground = FALSE)
+job=vpcmodel(host,dataset,vpc,vpcModel,runInBackground = FALSE)
 
 library(vpc)
 simData=getSimData(input,stratifyColumns = "sex",simFile="out.txt")

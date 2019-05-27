@@ -41,7 +41,7 @@ model = pkindirectmodel(indirectType = LimitedInhibition
                         )
 
 # --------------------------------------------------------------------------------------------------------
-# Reset the forms of structural model parameters as well as initial values for Theta and Omega
+# Set the forms of structural model parameters as well as initial values for Theta and Omega
 # --------------------------------------------------------------------------------------------------------
 # Set Imax = ilogit(tvlogitImax) with ilogit used to make sure it is between 0 and 1
 structuralParam(model, "Imax") = c(style = Logit
@@ -56,7 +56,7 @@ structuralParam(model, "IC50") = c(hasRandomEffect = FALSE)
 # reset initial values for fixed effects  (the default value is 1)
 initFixedEffects(model) = c(tvCl = 0.5, tvKin = 10, tvKout = 0.5)  
 
-# reset initial values for random effects (the default value is 1)
+# set initial values for random effects (the default value is 1)
 # Note: Even when one only wants to reset the value some of random effects, 
 #       one has to do this for all the random effects, 
 #       and can only use "initRandomEffects" once. 
@@ -67,14 +67,14 @@ initRandomEffects(model) = c(Diagonal
                              )
 
 # --------------------------------------------------------------------------------------------------------
-# Reset the residual error models 
+# Set the residual error models 
 # --------------------------------------------------------------------------------------------------------
-# reset the residual error model for CObs
+# set the residual error model for CObs
 residualEffect(model, "C") = c(errorType = Multiplicative
                              , SD = "0.1"
                              )
 
-# reset the residual error model for EObs
+# set the residual error model for EObs
 residualEffect(model, "E") = c(errorType = Multiplicative
                                , SD = "0.1"
                                )
@@ -164,3 +164,65 @@ res_vs_idv(xp
 eta_distrib(xp)
 
 
+##############################################################################################################
+
+###################                    VPC                                   ################### 
+
+##############################################################################################################
+
+# Accept all the estimates for fixed effects, random effects and sigma (to be used for VPC simulation)
+modelVPC = acceptAllEffects(model)
+
+# Copy the model into a new object, and then create a new working directory and copied all the files to it
+modelVPC = copyModel(modelVPC, modelName = paste0(ModelName, "_VPC"))
+
+# ==========================================================================================================
+#          - Set up default name for model, input dataset, and mapping files
+#          - Set up host platform 
+#          - set up simulation parameters (numReplicates, seed, output tables)
+# ==========================================================================================================
+# Define the file name for VPC simulation results (the default name is out.txt).
+vpcOutputFileName = "predout.csv"
+
+# Create the default name for the model, input dataset and mapping files 
+NlmeFileNames = NlmeDataset(outputFilename = vpcOutputFileName)
+
+
+# Host setup 
+host = NlmeParallelHost(sharedDirectory = Sys.getenv("NLME_ROOT_DIRECTORY")
+                        , parallelMethod = NlmeParallelMethod("LOCAL_MPI")
+                        , hostName = "MPI"
+                        , numCores = 1
+                        )
+
+# VPC setup
+VPCSetup = NlmeVpcParams(numReplicates = 100
+                         , seed = 1
+                         )
+
+# ==========================================================================================================
+#                                   Run the model 
+# ==========================================================================================================
+job = vpcmodel(host, NlmeFileNames, VPCSetup, modelVPC)
+
+# ==========================================================================================================
+#                             Using vpc library to do the VPC plots 
+# ==========================================================================================================
+
+# Load simulation input dataset (the generated predcheck0.csv put all the observations in one column)
+dt_ObsData = fread("predcheck0.csv")
+setnames(dt_ObsData, c("IVAR", "ID5"), c("TIME", "ID"))
+dt_ObsData_CObs = dt_ObsData[ObsName == "CObs"]
+dt_ObsData_EObs = dt_ObsData[ObsName == "EObs"]
+
+
+# load simulated data 
+dt_SimData = fread(vpcOutputFileName)
+setnames(dt_SimData, c("ID5", "IVAR"), c("ID", "TIME"))
+dt_SimData_CObs = dt_SimData[OBSNAME == "CObs"]
+dt_SimData_EObs = dt_SimData[OBSNAME == "EObs"]
+
+# VPC plots 
+plot_CObsVPC = vpc(sim = dt_SimData_CObs, obs = dt_ObsData_CObs, ylab = "CObs")
+plot_EObsVPC = vpc(sim = dt_SimData_EObs, obs = dt_ObsData_EObs, ylab = "EObs")
+egg::ggarrange(plot_CObsVPC, plot_EObsVPC)
