@@ -368,6 +368,7 @@ setMethod("initialize","NlmeSimulationParams",
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  vpcParams VPC parameters(NlmeVpcParams)
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
+#' @param  workingDir where to run the job
 #'
 #' @export RunVpcSimulation
 #'
@@ -388,15 +389,20 @@ RunVpcSimulation <-function(
                               params,
                               vpcParams=NULL,
                               simParams=NULL,
-                              runInBackground=TRUE)
+                              runInBackground=TRUE,
+                              workingDir = NULL)
 {
 
     workFlow="WorkFlow"
     cleanupFromPreviousRun()
     if ( attr(hostPlatform,"hostType")== "Windows" )
         runInBackground=FALSE
-    argsFile=GenerateControlfile(dataset, params,workFlow,vpcOption=vpcParams,simOption=simParams)
-    cwd = getwd()
+    if ( is.null(workingDir ) ) 
+        cwd = getwd()
+    else
+        cwd = workingDir
+    argsFile=GenerateControlfile(dataset, params,workFlow,vpcOption=vpcParams,
+                                 simOption=simParams,workingDir=cwd)
 
     argsList=list()
     argsList=c(argsList,"GENERIC")
@@ -433,7 +439,6 @@ RunVpcSimulation <-function(
 #' Method to execute an NLME simulation
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  simParams Simulation parameters(NlmeSimulationParam)
 #' @param  model  optional PK/PD model
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
@@ -452,10 +457,9 @@ RunVpcSimulation <-function(
 #'                             seed = 3527,
 #'                             simulationTables = c(SimTableObs))
 #'
-#' job = simmodel(defaultHost,dataset,simParams,model)
+#' job = simmodel(defaultHost,simParams,model)
 #'
 simmodel <-function( hostPlatform,
-                     dataset,
                      simParams= NULL,
                      model = NULL,
                      runInBackground=TRUE)
@@ -463,10 +467,13 @@ simmodel <-function( hostPlatform,
     params = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_NAIVE_POOLED,
                                    PARAMS_NUM_ITERATIONS=0)
     if ( ! is.null(model) ) {
-        writeDefaultFiles(model=model,dataset=dataset,simParams=simParams)
+        writeDefaultFiles(model=model,dataset=model@dataset,simParams=simParams)
         simParams@isPopulation = model@isPopulation
+        workingDir = model@modelInfo@workingDir
     }
-    return(RunVpcSimulation(hostPlatform=hostPlatform,params=params,dataset=dataset,simParams=simParams,runInBackground= runInBackground))
+    else
+        workingDir = getwd()
+    return(RunVpcSimulation(hostPlatform=hostPlatform,params=params,dataset=model@dataset,simParams=simParams,runInBackground= runInBackground,workingDir=workingDir))
 }
 
 #'
@@ -475,16 +482,15 @@ simmodel <-function( hostPlatform,
 #' Method to execute an NLME visual predictive check
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  vpcParams VPC parameters(NlmeVpcParam)
-#' @param  model  optional PK/PD model
+#' @param  model  PK/PD model
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
 #'
 #' @export
 #'
 #' @examples
 #'
-#' obsVars = GetObservationVariables(dataset)
+#' obsVars = GetObservationVariables(model@dataset)
 #'
 #' observationParameters(obsVars[[1]])=c(xaxis=VPC_XAXIS_T,
 #'                                       binningMethod=VPC_BIN_NONE,
@@ -495,18 +501,22 @@ simmodel <-function( hostPlatform,
 #'                        observationVars=obsVars)
 #'
 #'
-#' job = vpcmodel(defaultHost,dataset,vpcParams,model)
+#' job = vpcmodel(defaultHost,vpcParams,model)
 #'
 vpcmodel <-function( hostPlatform,
-                     dataset,
                      vpcParams = NULL ,
-                     model = NULL,
+                     model ,
                      runInBackground=TRUE)
 {
+
     params = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_NAIVE_POOLED,
                                    PARAMS_NUM_ITERATIONS=0)
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset,simParams=vpcParams)
-    return(RunVpcSimulation(hostPlatform=hostPlatform,params=params,dataset=dataset,vpcParams=vpcParams,runInBackground= runInBackground))
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset,simParams=vpcParams)
+        workingDir = model@modelInfo@workingDir
+    }
+    else
+        workingDir = getwd()
+    return(RunVpcSimulation(hostPlatform=hostPlatform,params=params,dataset=model@dataset,vpcParams=vpcParams,runInBackground= runInBackground,workingDir=workingDir))
 }
 

@@ -13,7 +13,8 @@
 ##############################################################################################################
 
 # Setup environment variables and loading necessary packages 
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 ##############################################################################################################
 
@@ -147,8 +148,7 @@ userDefinedExtraDefinitions(model) = c("addlcol(ADDL)"
 #          - set up simulation parameters (numReplicates, seed, output tables)
 # ==========================================================================================================
 
-# Create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
+
 
 # Host setup 
 host = NlmeParallelHost(sharedDirectory = Sys.getenv("NLME_ROOT_DIRECTORY")
@@ -182,13 +182,13 @@ SimSetup = NlmeSimulationParams(numReplicates = 50
 # ==========================================================================================================
 #                                   Run the model 
 # ==========================================================================================================
-job = simmodel(host, NlmeFileNames, SimSetup, model)
+job = simmodel(host, SimSetup, model)
 
 # ==========================================================================================================
 #                                   plot the results 
 # ==========================================================================================================
 # read the simulated observations 
-dt_SimObs = fread("SimTableObs.csv")
+dt_SimObs = fread(paste0(model@modelInfo@workingDir,"/SimTableObs.csv"))
 colnames(dt_SimObs)[1] = 'repl'
 
 # plot for CObs

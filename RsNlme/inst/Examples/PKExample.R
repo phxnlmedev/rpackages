@@ -1,27 +1,7 @@
 
-#
-# Load libraries and setup paths and hosts
-#
-library(ggplot2)
-library(xpose)
-library(Certara.NLME8)
-library(RsNlme)
-library(shiny)
-
-#
-# goto your working directory where you copied the demo files
-#
-setwd("c:/Work/RsNlmeWorkDirectory")
-
-#
-# setup environment
-#
-Sys.setenv("NLME_ROOT_DIRECTORY"="c:/Work/RsNlmeWorkDirectory")
-Sys.setenv("INSTALLDIR"="C:/Program Files/R/R-3.5.1/library/Certara.NLME8/InstallDirNLME")
-# License
-#Sys.setenv("PhoenixLicenseFile"="C:\\Program Files (x86)\\Pharsight\\Phoenix\\application\\Services\\Licensing\\lservrc")
-#Sys.setenv("NLME_HASH"="xxxx")
-
+# Setup environment variables and loading necessary packages 
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 #
 # Look at the input data
 #
@@ -55,7 +35,6 @@ model = pkmodel(numComp=2,
 #
 # Looks at model variables and map them to data columns
 #
-dataset=NlmeDataset()
 initColMapping(model)=input
 
 #modelColumnMapping(model)
@@ -72,10 +51,7 @@ residualEffect(model,"C")=c(errorType=Multiplicative,SD="0.16")
 # Set initial estimates on model variables
 #
 #initFixedEffects(model)=c(tvV=16,tvCl=7,tvV2=41,tvCl2=14)
-#
-# Write out default model and mapping files
-#
-writeDefaultFiles(model,dataset)
+
 #
 # Where to execute fitting
 #
@@ -85,12 +61,11 @@ host = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
                         hostName="MPI",
                         numCores=4)
 #
-# Evaluate the model and pick reasonable initial values for fixed effects
-#
+# Evaluate the model and pick reaso
 estimatesUI(model,unique(input$Subject),host)
 
 # Accept initial estimates picked from shiny app
-effects=getInitialEstimates()
+effects=getInitialEstimates(model)
 initFixedEffects(model) = effects
 print(model)
 #
@@ -110,7 +85,7 @@ engineParams = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_ELS,
 #
 # Do the model fitting
 #
-job=fitmodel(host,dataset,engineParams,model)
+job=fitmodel(host,engineParams,model=model)
 
 
 #
@@ -119,7 +94,7 @@ job=fitmodel(host,dataset,engineParams,model)
 library(xpose)
 library(Xpose.Nlme)
 
-xp=xposeNlme(dir="./",modelName="Initial Model")
+xp=xposeNlme(dir=model@modelInfo@workingDir,modelName="Initial Model")
 list_vars(xp)
 
 doxpose(xp)
@@ -192,13 +167,12 @@ sp = NlmeStepwiseParams(0.01, 0.001, "-2LL")
 mhost = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
                         installationDirectory = Sys.getenv("INSTALLDIR"),
                         parallelMethod=NlmeParallelMethod("MULTICORE"),
-                        hostName="MPI",
+                        hostName="MULTICORE",
                         numCores=4)
 #
 # remote execution on the grid
 #
 job=stepwiseSearch(mhost,
-                      dataset,
                       engineParams,
                       covariateModel(covarModel),
                       sp,
@@ -209,10 +183,10 @@ print(job)
 #
 # view results from covariate search
 #
-overall=read.csv("Overall.csv")
+overall=read.csv(paste0(covarModel@modelInfo@workingDir,"/Overall.csv"))
 View(overall)
 
-stepwiseLines=readLines("Stepwise.txt")
+stepwiseLines=readLines(paste0(covarModel@modelInfo@workingDir,"/Stepwise.txt"))
 View(stepwiseLines)
 
 #
@@ -227,11 +201,11 @@ covariateEffect(covarModel,"age","V")=COVAR_EFF_YES
 #
 covarModel=generatePMLModel(covarModel)
 
-job=fitmodel(host,dataset,engineParams,covarModel,runInBackground = FALSE)
+job=fitmodel(host,engineParams,covarModel,runInBackground = FALSE)
 
 #
 # Analyze results
-xp=xposeNlme(dir="./",modelName="Covariate Model")
+xp=xposeNlme(dir=covarModel@modelInfo@workingDir,modelName="Covariate Model")
 list_vars(xp)
 
 dv_vs_pred(xp)
@@ -251,34 +225,34 @@ cov_qq(xp)
 # Copy the model
 #
 bootModel = copyModel(covarModel,modelName="BootModel")
-writeDefaultFiles(bootModel,dataset)
+
 
 #
 # 5 boot replicates with seed = 1234
 #
-boot = NlmeBootstrapParams(numReplicates=15,
+bootParam = NlmeBootstrapParams(numReplicates=15,
                            randomNumSeed=1234,
                            stratifyColumns="Weight")
 #
 # Run a bootstrap job
 #
-job=bootstrap(mhost,dataset,engineParams,boot,bootModel,runInBackground = FALSE)
+job=bootstrap(mhost,engineParams,bootParam,runInBackground = FALSE,model=bootModel)
 
 print(job)
 
-out=read.csv("out.csv")
+out=read.csv(paste0(bootModel@modelInfo@workingDir,"/out.csv"))
 View(out)
 
-overall=read.csv("BootOverall.csv")
+overall=read.csv(paste0(bootModel@modelInfo@workingDir,"/BootOverall.csv"))
 View(overall)
 
-theta=read.csv("BootTheta.csv")
+theta=read.csv(paste0(bootModel@modelInfo@workingDir,"/BootTheta.csv"))
 View(theta)
 
-varCovar=read.csv("BootVarCoVar.csv")
+varCovar=read.csv(paste0(bootModel@modelInfo@workingDir,"/BootVarCoVar.csv"))
 View(varCovar)
 
-omega=read.csv("BootOmega.csv")
+omega=read.csv(paste0(bootModel@modelInfo@workingDir,"/BootOmega.csv"))
 View(omega)
 
 
@@ -287,11 +261,11 @@ View(omega)
 # VPC
 #
 vpcModel= copyModel(covarModel,modelName="VpcModel")
-#vpcModel=copyModel(model,modelName="VpcModel")
+
 
 observationNames(vpcModel)
 
-obsVars = GetObservationVariables(dataset)
+obsVars = GetObservationVariables(vpcModel@dataset)
 
 observationParameters(obsVars[[1]])=c(xaxis=VPC_XAXIS_T,
                                       binningMethod=VPC_BIN_KMEANS,
@@ -306,14 +280,12 @@ vpc = NlmeVpcParams(numReplicates=1000,
                        observationVars=obsVars,
                        simulationTables=c(simTable1))
 
-print(vpcModel)
-writeDefaultFiles(vpcModel,dataset,vpc)
 
-job=vpcmodel(host,dataset,vpc,vpcModel,runInBackground = FALSE)
+job=vpcmodel(host,vpc,vpcModel,runInBackground = FALSE)
 
 library(vpc)
-simData=getSimData(input,stratifyColumns = "sex",simFile="out.txt")
-obsData=getObsData(input)
+simData=getSimData(input,stratifyColumns = "sex",simFile="out.txt",modelDir=vpcModel@modelInfo@workingDir)
+obsData=getObsData(input,modelDir=vpcModel@modelInfo@workingDir)
 
 vpc1 <- vpc(sim = simData, obs = obsData, vpcdb = TRUE)
 
@@ -330,7 +302,7 @@ vpc::vpc(simData,obsData,
          pi = c(0.10,0.90),
          ci = c(0.20,0.80))
 
-vpc::vpc(sim=simData,obs=obsData,stratify=c(mapCovariate(input,"sex")),show=c(pi_ci=TRUE,pi_as_area=TRUE,obs_dv=TRUE))+theme_classic()
+vpc::vpc(sim=simData,obs=obsData,stratify=c(mapCovariate(input,"sex",workingDir=vpcModel@modelInfo@workingDir)),show=c(pi_ci=TRUE,pi_as_area=TRUE,obs_dv=TRUE))+theme_classic()
 st2=read.csv("simTable01.csv")
 View(st2)
 

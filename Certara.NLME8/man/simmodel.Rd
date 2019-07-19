@@ -4,13 +4,11 @@
 \alias{simmodel}
 \title{simmodel}
 \usage{
-simmodel(hostPlatform, dataset, simParams = NULL, model = NULL,
+simmodel(hostPlatform, simParams = NULL, model = NULL,
   runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
-
-\item{dataset}{Dataset and model information(NlmeDataset)}
 
 \item{simParams}{Simulation parameters(NlmeSimulationParam)}
 
@@ -33,6 +31,6 @@ simParams = NlmeSimulationParams(numReplicates = 50,
                             seed = 3527,
                             simulationTables = c(SimTableObs))
 
-job = simmodel(defaultHost,dataset,simParams,model)
+job = simmodel(defaultHost,simParams,model)
 
 }

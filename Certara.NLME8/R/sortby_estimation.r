@@ -75,7 +75,6 @@ setMethod("initialize","NlmeSortColumns",
 #' scenariofit() : Method to execute an NLME simple estimation on a set of scenario
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  scenariosList list of scenario names(c())
 #' @param  model Optional PK/PD model
@@ -84,7 +83,6 @@ setMethod("initialize","NlmeSortColumns",
 #'
 #' @examples
 #'
-#' dataset = NlmeDataset()
 #'
 #' param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
 #'                              PARAMS_NUM_ITERATIONS=1000)
@@ -97,22 +95,26 @@ setMethod("initialize","NlmeSortColumns",
 #' scenario4=NlmeScenario("SC0002","1,2")
 #' scenarios = c(scenario1,scenario2,scenario3,scenario4)
 #'
-#' job = scenariofit(defaultHost,dataset,params,scenarios,model)
+#' job = scenariofit(defaultHost,params,scenarios,model)
 #'
 #' @export
 #'
 scenariofit <-function( hostPlatform,
-                            dataset,
                             params,
                             scenarios,
                             model = NULL,
                             runInBackground=TRUE)
 {
     sortColumns=NlmeSortColumns("")
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset)
-    return(RunSortByEstimation(hostPlatform,dataset,params,
-                              sortColumns,scenarios, runInBackground))
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset)
+        workingDir = model@modelInfo@workingDir
+    }
+    else
+        workingDir = getwd()
+    return(RunSortByEstimation(hostPlatform,model@dataset,params,
+                              sortColumns,scenarios, runInBackground,
+                              workingDir = workingDir ))
 
 
   }
@@ -123,17 +125,14 @@ scenariofit <-function( hostPlatform,
 #' sortfit() : Method to execute an NLME simple estimation w sort keys
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  sortList list of sort columns (NlmeSortColumns)
 #' @param  scenariosList list of scenario names(c())
-#' @param  model Optional PK/PD model
+#' @param  model PK/PD model
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
 #'
 #'
 #' @examples
-#'
-#' dataset = NlmeDataset()
 #'
 #' param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
 #'                              PARAMS_NUM_ITERATIONS=1000)
@@ -147,28 +146,32 @@ scenariofit <-function( hostPlatform,
 #'
 #' sortColumns=NlmeSortColumns("group,sex")
 #'
-#' job = sortfit(defaultHost,dataset,params,sortColumns,scenarios,model)
+#' job = sortfit(defaultHost,params,sortColumns,scenarios,model)
 #'
 #' @export
 #'
 sortfit<-function(
                             hostPlatform,
-                            dataset,
                             params = NULL ,
                             sortColumns,
                             scenarios=list(),
-                            model=NULL,
+                            model,
                             runInBackground=TRUE)
 {
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset)
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset)
+        workingDir = model@modelInfo@workingDir
+    }
+    else
+        workingDir = getwd()
 
     return(RunSortByEstimation(hostPlatform,
-                               dataset,
+                               model@dataset,
                                params,
                                sortColumns,
                                scenarios, 
-                               runInBackground))
+                               runInBackground,
+                               workingDir = workingDir ))
 
 
   }
@@ -186,6 +189,7 @@ sortfit<-function(
 #' @param  sortList list of sort columns (NlmeSortColumns)
 #' @param  scenariosList list of scenario names(c())
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
+#' @param  workingDir where to run the job
 #'
 #' @examples
 #'
@@ -211,16 +215,21 @@ RunSortByEstimation <-function(
                             params,
                             sortColumns,
                             scenarios=list(),
-                            runInBackground=TRUE)
+                            runInBackground=TRUE,
+                            workingDir = NULL )
 {
     workFlow="WorkFlow"
 #    cleanupFromPreviousRun()
     if ( attr(hostPlatform,"hostType")== "Windows" )
         runInBackground=FALSE
 
-    argsFile=GenerateControlfile(dataset, params,workFlow,scenarios=scenarios)
+    if ( is.null(workingDir) ) 
+        cwd = getwd()
+    else
+        cwd = workingDir
+    argsFile=GenerateControlfile(dataset, params,workFlow,scenarios=scenarios,
+                                 workingDir = cwd)
 
-    cwd = getwd()
 
     argsList=list()
     argsList=c(argsList,attr(attr(hostPlatform,"parallelMethod"),"method"))
@@ -237,8 +246,6 @@ RunSortByEstimation <-function(
         argsList=c(argsList,workFlow)
     else
         argsList=c(argsList,getScenarioNames(scenarios))
-
-#    browser()
 
 
     job=SortByNlmeJob(jobType="Sort_By_Column",

@@ -258,7 +258,9 @@ setGeneric(name="genObserveError",
            {
              standardGeneric("genObserveError")
            })
-
+#'
+#' @export
+#'
 setMethod("genObserveError",
           signature="StructuralBlock",
           definition = function(.Object){

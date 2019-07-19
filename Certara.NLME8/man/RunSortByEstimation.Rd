@@ -5,7 +5,7 @@
 \title{RunSortByEstimation() : Method to execute multiple NLME estimation w sort key}
 \usage{
 RunSortByEstimation(hostPlatform, dataset, params, sortColumns,
-  scenarios = list(), runInBackground = TRUE)
+  scenarios = list(), runInBackground = TRUE, workingDir = NULL)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
@@ -15,6 +15,8 @@ RunSortByEstimation(hostPlatform, dataset, params, sortColumns,
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
+
+\item{workingDir}{where to run the job}
 
 \item{sortList}{list of sort columns (NlmeSortColumns)}
 

@@ -4,13 +4,11 @@
 \alias{stepwiseSearch}
 \title{stepwiseSearch()}
 \usage{
-stepwiseSearch(hostPlatform, dataset, params = NULL, covariateModel,
-  stepwiseParams, model = NULL, runInBackground = TRUE)
+stepwiseSearch(hostPlatform, params = NULL, covariateModel,
+  stepwiseParams, model, runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
-
-\item{dataset}{Dataset and model information(NlmeDataset)}
 
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
@@ -27,15 +25,12 @@ Method to execute an NLME stepwise covariate search
 }
 \examples{
 
-dataset = NlmeDataset()
-
 param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
                              PARAMS_NUM_ITERATIONS=1000)
 
 sp = NlmeStepwiseParams(0.01, 0.001, "-2LL")
 
 job=stepwiseSearch(host,
-                   dataset,
                    params,
                    covariateModel(covarModel),
                    sp,

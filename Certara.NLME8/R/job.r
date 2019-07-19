@@ -1,6 +1,6 @@
 
 
-library(ssh)
+#library(ssh)
 
 setClass("NlmeSortColumns")
 setClass("NlmeProfileParameters")
@@ -8,16 +8,30 @@ setClass("NlmeProfileParameters")
 
 
 #' @export getFilesToTransfer
-getFilesToTransfer <- function(argsFile){
-  lines=readLines(argsFile)
+getFilesToTransfer <- function(dirName,argsFile){
+  if ( dirname(argsFile) == "." ) 
+      lines=readLines(paste0(dirName,"/",argsFile))
+  else
+      lines=readLines(argsFile)
   filesLine=lines[2]
   files=unlist(strsplit(filesLine,split=" "))
+  if ( dirName != "." ) {
+      for ( indx in 1:length(files) ) {
+          dn = dirname(files[indx])
+          if ( dn == "." ) 
+              files[indx] = paste0(dirName,"/",files[indx])
+      }
+  }
   files
 }
 
 #' @export getResultsList
-getResultsList <- function(argsFile){
-  lines=readLines(argsFile)
+getResultsList <- function(localDir,argsFile){
+
+ if ( dirname(argsFile) == "." )
+     lines=readLines(paste0(localDir,"/",argsFile))
+ else
+     lines=readLines(argsFile)
   filesLine=lines[3]
   files=unlist(strsplit(filesLine,split=" "))
   files
@@ -78,6 +92,7 @@ setMethod("initialize","SimpleNlmeJob",
               cat("NLME Job\n")
             if ( host@isLocal ) {
                 copyTemplateFiles(host,localDir)
+                .Object@localDir = localDir
                 .Object@remoteDir = localDir
                 .Object@host = host
                 .Object@argsFile = argsFile
@@ -87,6 +102,7 @@ setMethod("initialize","SimpleNlmeJob",
             }
             else {
             
+                .Object@localDir = localDir
                 tmpdir=mktempdir(host@remoteExecutor)
                 .Object@remoteDir = tmpdir
                 .Object@host = host
@@ -141,10 +157,10 @@ setMethod("executeJob",
               
             } else {
               
-              files=getFilesToTransfer(.Object@argsFile)
+              files=getFilesToTransfer(.Object@localDir,.Object@argsFile)
               all=c(files,.Object@scriptFile,.Object@argsFile)
               stat=uploadFiles(.Object@host@remoteExecutor,.Object@remoteDir,all)
-              fullPath=paste(.Object@remoteDir,.Object@scriptFile,sep="/")
+              fullPath=paste(.Object@remoteDir,basename(.Object@scriptFile),sep="/")
               
               cmds=c(paste0("chmod 777 ",fullPath),
                      paste0("dos2unix ",fullPath),
@@ -249,7 +265,7 @@ setGeneric(name="retrieveJobResults",
 setMethod("retrieveJobResults",
           signature="SimpleNlmeJob",
           definition = function(.Object){
-            files=getResultsList(.Object@argsFile)
+            files=getResultsList(.Object@localDir,.Object@argsFile)
             for ( f in files ) {
               print(f)
               
@@ -290,7 +306,7 @@ setMethod("generateScript",
             
             {
               if ( .Object@host@hostType == "Windows" )  {
-                scriptName="cmd.bat"
+                scriptName=paste0(.Object@remoteDir,"/cmd.bat")
 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -299,7 +315,6 @@ setMethod("generateScript",
                         file=scriptName,append=appendFlag,sep="\n")
                     appendFlag=TRUE
                 }
-
 
                 cat(gsub("/","\\",paste0("set INSTALLDIR=",.Object@host@installationDirectory),fixed=TRUE),
                     file=scriptName,append=appendFlag,sep="\n")
@@ -319,7 +334,7 @@ setMethod("generateScript",
                     cat(cmd, file=scriptName,append=appendFlag,sep="\n")
 
               } else {
-                scriptName="cmd.sh"
+                scriptName=paste0(.Object@localDir,"/cmd.sh")
                 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -359,7 +374,7 @@ setMethod("generateScript",
                            "${INSTALLDIR} ",
                            "${shared_directory} ",
                            .Object@remoteDir," ",
-                           .Object@argsFile, " ",
+                           basename(.Object@argsFile), " ",
                            .Object@host@numCores, " ",
                            .Object@workflow),
                     #                           " > NlmeRemote.LOG 2>&1"),
@@ -503,7 +518,7 @@ setMethod("generateScript",
             
             
               if ( .Object@host@hostType == "Windows" )  {
-                scriptName="cmd.bat"
+                scriptName=paste0(.Object@remoteDir,"/cmd.bat")
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
                 if (  hash != "" ) {
@@ -531,7 +546,7 @@ setMethod("generateScript",
 #                    file=scriptName,append=appendFlag,sep="\n")
 
                 controlFile=.Object@argsFile
-                stuff=parseControlFile(controlFile)
+                stuff=parseControlFile(.Object@localDir,controlFile)
                 modelFile=stuff[1]
                 colDefFile=stuff[2]
                 dataFile=stuff[3]
@@ -547,7 +562,7 @@ setMethod("generateScript",
                 numProc=.Object@argsList[[4]]
                 confidenceLevel=.Object@argsList[[11]]
                 workflow_name = .Object@argsList[[12]]
-                cmd = paste0(.Object@host@installationDirectory,"/bootstrap.bat ",
+                cmd = paste0(.Object@host@installationDirectory,"/phx_bootstrap.bat ",
                            .Object@host@parallelMethod@method, " ",
                            "%INSTALLDIR% ",
                            "%shared_directory% ",
@@ -568,7 +583,7 @@ setMethod("generateScript",
                     cmd=gsub("/","\\",cmd,fixed=TRUE)
                     cat(cmd, file=scriptName,append=appendFlag,sep="\n")
               } else {
-                scriptName="cmd.sh"
+                scriptName=paste0(.Object@localDir,"/cmd.sh")
                 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -604,7 +619,7 @@ setMethod("generateScript",
                     file=scriptName,append=appendFlag,sep="\n")
                 
                 controlFile=.Object@argsFile
-                stuff=parseControlFile(controlFile)
+                stuff=parseControlFile(.Object@localDir,controlFile)
                 modelFile=stuff[1]
                 colDefFile=stuff[2]
                 dataFile=stuff[3]
@@ -620,7 +635,7 @@ setMethod("generateScript",
                 numProc=.Object@argsList[[4]]
                 confidenceLevel=.Object@argsList[[11]]
                 workflow_name = .Object@argsList[[12]]
-                cat(paste0(.Object@host@installationDirectory,"/bootstrap.sh ",
+                cat(paste0(.Object@host@installationDirectory,"/phx_bootstrap.sh ",
                            .Object@host@parallelMethod@method, " ",
                            "${INSTALLDIR} ",
                            "${shared_directory} ",
@@ -666,10 +681,10 @@ setMethod("executeJob",
                }
             } else {
               
-              files=getFilesToTransfer(.Object@argsFile)
+              files=getFilesToTransfer(.Object@localDir,.Object@argsFile)
               all=c(files,.Object@scriptFile,.Object@argsFile)
               stat=uploadFiles(.Object@host@remoteExecutor,.Object@remoteDir,all)
-              fullPath=paste(.Object@remoteDir,.Object@scriptFile,sep="/")
+              fullPath=paste(.Object@remoteDir,basename(.Object@scriptFile),sep="/")
               
               
               cmds=c(paste0("chmod 777 ",fullPath),
@@ -713,7 +728,7 @@ setMethod("generateScript",
             
             
               if ( .Object@host@hostType == "Windows" )  {
-                scriptName="cmd.bat"
+                scriptName=paste0(.Object@remoteDir,"/cmd.bat")
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
                 if (  hash != "" ) {
@@ -731,7 +746,7 @@ setMethod("generateScript",
                     file=scriptName,append=appendFlag,sep="\n")
 
                 controlFile=.Object@argsFile
-                stuff=parseControlFile(controlFile)
+                stuff=parseControlFile(.Object@localDir,controlFile)
                 modelFile=stuff[1]
                 colDefFile=stuff[2]
                 dataFile=stuff[3]
@@ -745,7 +760,7 @@ setMethod("generateScript",
                 covariateList = .Object@argsList[[9]]
                 stepwiseMethod= .Object@argsList[[10]]
 
-                cmd = paste0(.Object@host@installationDirectory,"/stepwise_covarsrch.bat ",
+                cmd = paste0(.Object@host@installationDirectory,"/phx_stepwise_covarsrch.bat ",
                            .Object@host@parallelMethod@method, " ",
                            "%INSTALLDIR% ",
                            "%shared_directory% ",
@@ -755,16 +770,15 @@ setMethod("generateScript",
                            "\"",filesToCopy, "\" ",
                            numCovariates, " ",
                            "\"", covariateList, "\" ",
-                           stepwiseMethod, " ",
+                           "\"", stepwiseMethod, "\" ",
                            .Object@stepParam@addPValue, " ",
                            .Object@stepParam@removePValue, " " ,
                            .Object@host@numCores, " ",
                            .Object@workflow)
 
-                    cmd=gsub("/","\\",cmd,fixed=TRUE)
                     cat(cmd, file=scriptName,append=appendFlag,sep="\n")
               } else {
-                scriptName="cmd.sh"
+                scriptName=paste0(.Object@localDir,"/cmd.sh")
                 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -800,7 +814,7 @@ setMethod("generateScript",
                     file=scriptName,append=appendFlag,sep="\n")
 
                 controlFile=.Object@argsFile
-                stuff=parseControlFile(controlFile)
+                stuff=parseControlFile(.Object@localDir,controlFile)
                 modelFile=stuff[1]
                 colDefFile=stuff[2]
                 dataFile=stuff[3]
@@ -814,7 +828,7 @@ setMethod("generateScript",
                 covariateList = .Object@argsList[[9]]
                 stepwiseMethod= .Object@argsList[[10]]
 
-                cat(paste0(.Object@host@installationDirectory,"/stepwise_covarsrch.sh ",
+                cat(paste0(.Object@host@installationDirectory,"/phx_stepwise_covarsrch.sh ",
                            .Object@host@parallelMethod@method, " ",
                            "${INSTALLDIR} ",
                            "${shared_directory} ",
@@ -861,10 +875,10 @@ setMethod("executeJob",
 
             } else {
 
-              files=getFilesToTransfer(.Object@argsFile)
+              files=getFilesToTransfer(.Object@localDir,.Object@argsFile)
               all=c(files,.Object@scriptFile,.Object@argsFile)
               stat=uploadFiles(.Object@host@remoteExecutor,.Object@remoteDir,all)
-              fullPath=paste(.Object@remoteDir,.Object@scriptFile,sep="/")
+              fullPath=paste(.Object@remoteDir,basename(.Object@scriptFile),sep="/")
 
 
               cmds=c(paste0("chmod 777 ",fullPath),
@@ -912,7 +926,7 @@ setMethod("generateScript",
             print(" generateScript for ShotgunNlmeJob()")
 
             if ( .Object@host@hostType == "Windows" )  {
-              scriptName="cmd.bat"
+                scriptName=paste0(.Object@remoteDir,"/cmd.bat")
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
                 if (  hash != "" ) {
@@ -927,21 +941,31 @@ setMethod("generateScript",
                 appendFlag=TRUE
                 cat(gsub("/","\\",paste0("set shared_directory=",.Object@host@sharedDirectory),fixed=TRUE),
                     file=scriptName,append=appendFlag,sep="\n")
-                cmd = paste0(.Object@host@installationDirectory,
-                             "/sortcol_estimation.bat ",
-                             .Object@host@parallelMethod@method, " ",
-                             "%INSTALLDIR% ",
-                             "%shared_directory% ",
-                             .Object@remoteDir," ",
-                             .Object@argsFile, " ",
-                             .Object@host@numCores, " ",
-                             .Object@workflow)
-                cmd = gsub("/","\\",cmd,fixed=TRUE)
-                cat(cmd, file=scriptName,append=appendFlag,sep="\n")
+
+              controlFile=.Object@argsFile
+              stuff=parseControlFile(.Object@localDir,controlFile)
+              modelFile=stuff[1]
+              colDefFile=stuff[2]
+              dataFile=stuff[3]
+              extraArgsFile=stuff[4]
+              outputFile=stuff[5]
+              filesToCopy=stuff[6]
+              engine=stuff[7]
+              numIterations=stuff[8]
+
+              cat(paste0(.Object@host@installationDirectory,"/phx_covar_search.bat ",
+                         .Object@host@parallelMethod@method, " ",
+                         "%INSTALLDIR% ",
+                         "%shared_directory% ",
+                         .Object@remoteDir," ",
+                         paste0(.Object@localDir,"/",controlFile)," " ,
+                         .Object@host@numCores, " ",
+                         .Object@workflow),
+                  file=scriptName,append=appendFlag,sep="\n")
 
 
             } else {
-              scriptName="cmd.sh"
+                scriptName=paste0(.Object@localDir,"/cmd.sh")
 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -979,7 +1003,7 @@ setMethod("generateScript",
                   file=scriptName,append=appendFlag,sep="\n")
 
               controlFile=.Object@argsFile
-              stuff=parseControlFile(controlFile)
+              stuff=parseControlFile(.Object@localDir,controlFile)
               modelFile=stuff[1]
               colDefFile=stuff[2]
               dataFile=stuff[3]
@@ -990,14 +1014,12 @@ setMethod("generateScript",
               numIterations=stuff[8]
 
 
-              cat(paste0(.Object@host@installationDirectory,"/generic_run.sh ",
+              cat(paste0(.Object@host@installationDirectory,"/phx_covar_search.sh ",
                          .Object@host@parallelMethod@method, " ",
                          "${INSTALLDIR} ",
                          "${shared_directory} ",
                          .Object@remoteDir," ",
-                         modelFile, " " ,
-                         extraArgsFile," " ,
-                         "\"",filesToCopy, "\" ",
+                         basename(controlFile)," " ,
                          .Object@host@numCores, " ",
                          .Object@workflow),
                   #                           " > NlmeRemote.LOG 2>&1"),
@@ -1031,10 +1053,10 @@ setMethod("executeJob",
 
             } else {
 
-              files=getFilesToTransfer(.Object@argsFile)
-              all=c(files,.Object@scriptFile,.Object@argsFile)
+              files=getFilesToTransfer(.Object@localDir,.Object@argsFile)
+              all=c(files,.Object@scriptFile,paste0(.Object@localDir,"/",.Object@argsFile))
               stat=uploadFiles(.Object@host@remoteExecutor,.Object@remoteDir,all)
-              fullPath=paste(.Object@remoteDir,.Object@scriptFile,sep="/")
+              fullPath=paste(.Object@remoteDir,basename(.Object@scriptFile),sep="/")
 
 
               cmds=c(paste0("chmod 777 ",fullPath),
@@ -1093,10 +1115,10 @@ setMethod("executeJob",
               
             } else {
               
-              files=getFilesToTransfer(.Object@argsFile)
+              files=getFilesToTransfer(.Object@localDir,.Object@argsFile)
               all=c(files,.Object@scriptFile,.Object@argsFile)
               stat=uploadFiles(.Object@host@remoteExecutor,.Object@remoteDir,all)
-              fullPath=paste(.Object@remoteDir,.Object@scriptFile,sep="/")
+              fullPath=paste(.Object@remoteDir,basename(.Object@scriptFile),sep="/")
               
               cmds=c(paste0("chmod 777 ",fullPath),
                      paste0("dos2unix ",fullPath),
@@ -1123,7 +1145,7 @@ setMethod("generateScript",
 
             {
               if ( .Object@host@hostType == "Windows" )  {
-                scriptName="cmd.bat"
+                scriptName=paste0(.Object@remoteDir,"/cmd.bat")
 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -1140,7 +1162,7 @@ setMethod("generateScript",
                 cat(gsub("/","\\",paste0("set shared_directory=",.Object@host@sharedDirectory),fixed=TRUE),
                     file=scriptName,append=appendFlag,sep="\n")
                 cmd = paste0(.Object@host@installationDirectory,
-                             "/sortcol_estimation.bat ",
+                             "/phx_sortcol_estimation.bat ",
                              .Object@host@parallelMethod@method, " ",
                              "%INSTALLDIR% ",
                              "%shared_directory% ",
@@ -1154,7 +1176,7 @@ setMethod("generateScript",
                 cat(cmd, file=scriptName,append=appendFlag,sep="\n")
 
               } else {
-                scriptName="cmd.sh"
+                scriptName=paste0(.Object@localDir,"/cmd.sh")
 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -1189,12 +1211,12 @@ setMethod("generateScript",
                 appendFlag=TRUE
                 cat(paste0("export shared_directory=",.Object@host@sharedDirectory),
                     file=scriptName,append=appendFlag,sep="\n")
-                cat(paste0(.Object@host@installationDirectory,"/sortcol_estimation.sh ",
+                cat(paste0(.Object@host@installationDirectory,"/phx_sortcol_estimation.sh ",
                            .Object@host@parallelMethod@method, " ",
                            "${INSTALLDIR} ",
                            "${shared_directory} ",
                            .Object@remoteDir," ",
-                           .Object@argsFile, " ",
+                           basename(.Object@argsFile), " ",
                              .Object@sortColumns@numSortColumns, " ",
                              "\"",gsub(","," ",attr(sortColumns,"sortColumnList")),"\" ",
                            .Object@host@numCores, " ",
@@ -1248,10 +1270,10 @@ setMethod("executeJob",
 
             } else {
 
-              files=getFilesToTransfer(.Object@argsFile)
+              files=getFilesToTransfer(.Object@localDir,.Object@argsFile)
               all=c(files,.Object@scriptFile,.Object@argsFile)
               stat=uploadFiles(.Object@host@remoteExecutor,.Object@remoteDir,all)
-              fullPath=paste(.Object@remoteDir,.Object@scriptFile,sep="/")
+              fullPath=paste(.Object@remoteDir,basename(.Object@scriptFile),sep="/")
               
               cmds=c(paste0("chmod 777 ",fullPath),
                      paste0("dos2unix ",fullPath),
@@ -1278,7 +1300,7 @@ setMethod("generateScript",
 
             {
               if ( .Object@host@hostType == "Windows" )  {
-                scriptName="cmd.bat"
+                scriptName=paste0(.Object@remoteDir,"/cmd.bat")
 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -1295,7 +1317,7 @@ setMethod("generateScript",
                 cat(gsub("/","\\",paste0("set shared_directory=",.Object@host@sharedDirectory),fixed=TRUE),
                     file=scriptName,append=appendFlag,sep="\n")
                 cmd = paste0(.Object@host@installationDirectory,
-                             "/profile_estimation.bat ",
+                             "/phx_profile_estimation.bat ",
                              .Object@host@parallelMethod@method, " ",
                              "%INSTALLDIR% ",
                              "%shared_directory% ",
@@ -1311,7 +1333,7 @@ setMethod("generateScript",
                 cat(cmd, file=scriptName,append=appendFlag,sep="\n")
 
               } else {
-                scriptName="cmd.sh"
+                scriptName=paste0(.Object@localDir,"/cmd.sh")
 
                 appendFlag=FALSE
                 hash= Sys.getenv("NLME_HASH")
@@ -1346,12 +1368,12 @@ setMethod("generateScript",
                 appendFlag=TRUE
                 cat(paste0("export shared_directory=",.Object@host@sharedDirectory),
                     file=scriptName,append=appendFlag,sep="\n")
-                cat(paste0(.Object@host@installationDirectory,"/profile_estimation.sh ",
+                cat(paste0(.Object@host@installationDirectory,"/phx_profile_estimation.sh ",
                            .Object@host@parallelMethod@method, " ",
                            "${INSTALLDIR} ",
                            "${shared_directory} ",
                            .Object@remoteDir," ",
-                           .Object@argsFile, " ",
+                           basename(.Object@argsFile), " ",
                              .Object@sortColumns@numSortColumns, " ",
                              "\"",gsub(","," ",attr(.Object@sortColumns,"sortColumnList")),"\" ",
                              "\"",getProfilesString(.Object@profiles),"\" ",

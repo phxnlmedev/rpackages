@@ -19,7 +19,8 @@
 ##############################################################################################################
 
 # Setup environment variables and loading necessary packages 
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 ##############################################################################################################
 
@@ -118,8 +119,7 @@ modelColumnMapping(model) = c(A1 = "Dose")
 ###################                    Model Fitting                                      ################### 
 
 ##############################################################################################################
-# create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
+
 
 
 # host setup: run locally with MPI enabled
@@ -137,7 +137,7 @@ engineParams = NlmeEngineExtraParams(PARAMS_METHOD = METHOD_LAPLACIAN
 
 
 # run the model 
-job = fitmodel(host, NlmeFileNames, engineParams, model)
+job = fitmodel(host, engineParams, model)
 
 
 ##############################################################################################################
@@ -145,7 +145,7 @@ job = fitmodel(host, NlmeFileNames, engineParams, model)
 ###################                      Diagnostic plots                            ########################
 
 ##############################################################################################################
-xp = xposeNlme(dir="./", modelName = ModelName)
+xp = xposeNlme(dir=model@modelInfo@workingDir, modelName = ModelName)
 
 
 # ==========================================================================================================
@@ -212,7 +212,7 @@ modelVPC = copyModel(modelVPC, modelName = paste0(ModelName, "_VPC"))
 vpcOutputFileName = "predout.csv"
 
 # Create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset(outputFilename = vpcOutputFileName)
+modelVPC@dataset@outputFilename= vpcOutputFileName
 
 
 # Host setup 
@@ -230,17 +230,17 @@ VPCSetup = NlmeVpcParams(numReplicates = 100
 # ==========================================================================================================
 #                                   Run the model 
 # ==========================================================================================================
-job = vpcmodel(host, NlmeFileNames, VPCSetup, modelVPC)
+job = vpcmodel(host, VPCSetup, model = modelVPC)
 
 # ==========================================================================================================
 #                             Using vpc library to do the VPC plots 
 # ==========================================================================================================
 # load observed data
-dt_ObsData = getObsData(dt_InputDataSet)
+dt_ObsData = getObsData(dt_InputDataSet,modelDir=modelVPC@modelInfo@workingDir)
 
 
 # load simulated data 
-dt_SimData = getSimData(input = dt_InputDataSet, simFile = vpcOutputFileName)
+dt_SimData = getSimData(input = dt_InputDataSet, simFile = vpcOutputFileName,modelDir=modelVPC@modelInfo@workingDir)
 
 #----------------------------------------------------------------------------------------------------------
 # VPC plots

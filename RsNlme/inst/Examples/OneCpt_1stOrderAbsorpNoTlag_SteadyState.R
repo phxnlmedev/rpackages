@@ -15,25 +15,9 @@
 # ==========================================================================================================
 # Setup environment
 # ==========================================================================================================
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
-# ==========================================================================================================
-# Load library
-# ==========================================================================================================
-# Phoenix NLME engine libraries
-library(Certara.NLME8)
-
-# Library used to create PK/PD model in R 
-library(RsNlme)
-
-# Package used to run the model in the linux grid 
-library(ssh)
-
-# Graphic package
-library(ggplot2)
-
-
-# Data processing library 
-library(data.table)
+# Setup environment variables and loading necessary packages 
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 
 
@@ -138,8 +122,7 @@ modelColumnMapping(model) = c(Aa = "Dose")
 #          - Set up simulation parameters (numReplicates, seed, output tables)
 # ==========================================================================================================
 
-# Create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
+
 
 # Host setup: run locally
 host = NlmeParallelHost(sharedDirectory = Sys.getenv("NLME_ROOT_DIRECTORY")
@@ -176,7 +159,7 @@ SimSetup = NlmeSimulationParams(numReplicates = 50
 # ==========================================================================================================
 #                                   Run the model 
 # ==========================================================================================================
-job = simmodel(host, NlmeFileNames, SimSetup, model)
+job = simmodel(host, SimSetup, model)
 
 
 

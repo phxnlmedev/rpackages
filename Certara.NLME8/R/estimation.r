@@ -25,9 +25,8 @@ generateFirstFewArguments <-function(jobType,argsFile)
 #' fitmodel() : Method to execute an NLME simple estimation
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
-#' @param  model  Optional PK/PD model
+#' @param  model  PK/PD model
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
 #' 
 #' @export fitmodel  
@@ -39,8 +38,6 @@ generateFirstFewArguments <-function(jobType,argsFile)
 #' model = pkmodel(numComp=1,
 #'                absorption = Extravascular,
 #'                modelName="PkModel")
-#'
-#' dataset = defaultDataset(model,input)
 #'
 #' initColMapping(model)= input
 #'
@@ -56,18 +53,20 @@ generateFirstFewArguments <-function(jobType,argsFile)
 #' params = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
 #'                              PARAMS_NUM_ITERATIONS=1000)
 #' 
-#' job = fitmodel(host,dataset,params,model)
+#' job = fitmodel(host,params,model)
 #'
 fitmodel <-function( hostPlatform,
-                     dataset,
                      params = NULL,
-                     model = NULL,
+                     model ,
                      runInBackground=TRUE)
 {
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset)
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset)
+        workingDir = model@modelInfo@workingDir
+    } else
+        workingDir = getwd()
 
-    return(RunSimpleEstimation(hostPlatform,dataset,params,runInBackground))
+    return(RunSimpleEstimation(hostPlatform,model@dataset,params,runInBackground,workingDir))
 }
 
 
@@ -81,6 +80,7 @@ fitmodel <-function( hostPlatform,
 #' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
+#' @param  workingDir Where to run the job
 #' 
 #' @export RunSimpleEstimation  
 #' 
@@ -97,7 +97,8 @@ RunSimpleEstimation <-function(
                               hostPlatform,
                               dataset,
                               params,
-                              runInBackground=TRUE)
+                              runInBackground=TRUE,
+                              workingDir=NULL)
 {
 
     workFlow="WorkFlow"
@@ -105,10 +106,12 @@ RunSimpleEstimation <-function(
     if ( attr(hostPlatform,"hostType")== "Windows" )
         runInBackground=FALSE
    
-    argsFile=GenerateControlfile(dataset, params,workFlow)
+    if ( is.null(workingDir) )  
+        cwd = getwd()
+    else
+        cwd = workingDir
 
-  
-    cwd = getwd()
+    argsFile=GenerateControlfile(dataset, params,workFlow,workingDir=workingDir)
  
     argsList=list()
     argsList=c(argsList,"GENERIC")

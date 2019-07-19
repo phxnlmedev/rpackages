@@ -267,6 +267,10 @@ FailProgress <-function(){
     progress$EndTime= getLocalTimeUTC()
     assign("ProgressStatus",progress,envir=nlmeEnv)
     ReportProgress()
+    print(progress$Status)
+print(GlobalSummaryLine1)
+print(GlobalSummaryLine2)
+print(GlobalSummaryLine3)
 }
 
 CancelProgress <-function(numSamples,numSuccessful, numFailed){
@@ -443,6 +447,7 @@ DEBUG_MASTER(paste("MpiExecutable",MpiExecutable))
     cat(sprintf("assign(\"MpiLocal\",MpiLocal,envir=.GlobalEnv)"),file=name,sep="\n",append=TRUE)
     cat(sprintf("assign(\"MpiNumCores\",MpiNumCores,envir=.GlobalEnv)"),file=name,sep="\n",append=TRUE)
 
+    tmpFilename = tempfile()
     if ( jobType == "BOOTSTRAP" )  {
         cat(sprintf("engine=%d",engine),file=name,sep="\n",append=TRUE)
         cat(sprintf("num_iterations=%d",num_iterations),file=name,sep="\n",append=TRUE)
@@ -454,8 +459,8 @@ DEBUG_MASTER(paste("MpiExecutable",MpiExecutable))
     }
     else {
         cat(sprintf("control_file=\"%s\"",control_file),file=name,sep="\n",append=TRUE)
-        dput(control_lines,"temp.txt")
-        lines=readLines("temp.txt")
+        dput(control_lines,tmpFilename)
+        lines=readLines(tmpFilename)
         tok=""
         for ( l in lines ) {
             tok=paste0(tok,l)
@@ -469,35 +474,31 @@ DEBUG_MASTER(paste("MpiExecutable",MpiExecutable))
     cat(sprintf("    }"), file=name, sep="\n",append=TRUE)
     cat(sprintf("}"),file=name, sep="\n", append=TRUE)
 
-#    dput(Certara.NLME:::runNLMESample, file= "temp1.r" )
-    dput(runNLMESample, file= "temp2.r" ,control=c("useSource"))
-    lines = readLines(sprintf("temp2.r"))
+    dput(runNLMESample, file= tmpFilename ,control=c("useSource"))
+    lines = readLines(tmpFilename)
     cat(sprintf("runNLMESample<- function(indx,eArgsFile,ofn,extraArgs=\"\",seed=-1,max_tries=1,exePostfix = \"\")"),file=name, sep="\n", append=TRUE)
     cat(lines[3:length(lines)],file=name,sep="\n",append=TRUE)
-#    dput(Certara.NLME:::"getExtraArgumentFilename", file= "temp1.r" )
-    dput(getExtraArgumentFilename, file= "temp1.r" ,control=c("useSource"))
-    lines = readLines(sprintf("temp1.r"))
+    dput(getExtraArgumentFilename, file= tmpFilename ,control=c("useSource"))
+    lines = readLines(tmpFilename)
     cat(sprintf("getExtraArgumentFilename<- function(line)"),file=name, sep="\n", append=TRUE)
     cat(lines[2:length(lines)],file=name,sep="\n",append=TRUE)
-#    dput(Certara.NLME:::"getRunSuccessFilename", file= "temp1.r" )
-    dput(getRunSuccessFilename, file= "temp1.r" ,control=c("useSource"))
-    lines = readLines(sprintf("temp1.r"))
+    dput(getRunSuccessFilename, file= tmpFilename ,control=c("useSource"))
+    lines = readLines(tmpFilename)
     cat(sprintf("getRunSuccessFilename<- function(line)"),file=name, sep="\n", append=TRUE)
     cat(lines[2:length(lines)],file=name,sep="\n",append=TRUE)
 
-#    dput(Certara.NLME:::"getExtraArgumentFilenameIndex", file= "temp1.r" )
-    dput(getExtraArgumentFilenameIndex, file= "temp1.r" ,control=c("useSource"))
-    lines = readLines(sprintf("temp1.r"))
+    dput(getExtraArgumentFilenameIndex, file= tmpFilename ,control=c("useSource"))
+    lines = readLines(tmpFilename)
     cat(sprintf("getExtraArgumentFilenameIndex<- function(line)"),file=name, sep="\n", append=TRUE)
     cat(lines[2:length(lines)],file=name,sep="\n",append=TRUE)
 
-    dput(DEBUG_MASTER, file= "temp1.r" ,control=c("useSource"))
-    lines = readLines(sprintf("temp1.r"))
+    dput(DEBUG_MASTER, file= tmpFilename ,control=c("useSource"))
+    lines = readLines(tmpFilename)
     cat(sprintf("DEBUG_MASTER<- function(str)"),file=name, sep="\n", append=TRUE)
     cat(lines[2:length(lines)],file=name,sep="\n",append=TRUE)
 
-    dput(getExePostfix, file= "temp3.r" ,control=c("useSource"))
-    lines = readLines(sprintf("temp3.r"))
+    dput(getExePostfix, file= tmpFilename ,control=c("useSource"))
+    lines = readLines(tmpFilename)
     cat(sprintf("getExePostfix<- function(line)"),file=name, sep="\n", append=TRUE)
     cat(lines[2:length(lines)],file=name,sep="\n",append=TRUE)
 }
@@ -555,16 +556,16 @@ DEBUG_MASTER(paste("exePostfix",exePostfix))
         for ( f in unlist(strsplit(files_to_copy, split=" ") )) {
 
     
-            file.copy(sprintf("%s",f),sprintf("%s/%s",workingDir,f),overwrite=TRUE)
+            file.copy(sprintf("%s",f),sprintf("%s/%s",workingDir,basename(f)),overwrite=TRUE)
         }
-        file.copy(sprintf("%s",eArgsFile),sprintf("%s/%s",workingDir,eArgsFile),overwrite=TRUE)
+        file.copy(sprintf("%s",eArgsFile),sprintf("%s/%s",workingDir,basename(eArgsFile)),overwrite=TRUE)
     }
 
     # nlmeargs.txt needs @ for commandline
     if( nchar(eArgsFile) > 0  )
-        extraArgsFile=sprintf("@%s",eArgsFile)
+        extraArgsFile=sprintf("@%s",basename(eArgsFile))
     else
-        extraArgsFile=eArgsFile
+        extraArgsFile=basename(eArgsFile)
 
     MpiExecutable=get("MpiExecutable",envir=.GlobalEnv)
     MpiArgument=get("MpiArgument",envir=.GlobalEnv)
@@ -765,8 +766,23 @@ DEBUG_MASTER("func --> runNLMEBootstrapSample() ")
 
 
 runNLMEInitialSample<- function(indx) { 
+
     source(sprintf("myglobaldefs.r"))
 DEBUG_MASTER("func --> runNLMEInitialSample() ")
+
+    ProgressStatus = get("ProgressStatus",envir=nlmeEnv)
+    progress = ProgressStatus 
+    progress$Status = "Running"
+    GlobalSummaryLine1 = "Running bootstrap initial estimates"
+    assign("GlobalSummaryLine1",GlobalSummaryLine1,envir=nlmeEnv)
+    GlobalSummaryLine2 = ""
+    assign("GlobalSummaryLine2",GlobalSummaryLine2,envir=nlmeEnv)
+    GlobalSummaryLine3 = ""
+    assign("GlobalSummaryLine3",GlobalSummaryLine3,envir=nlmeEnv)
+    assign("ProgressStatus",progress,envir=nlmeEnv)
+
+    UpdateProgress(1, 0, 0, 0 , progressStage="Initial Estimates ")
+DEBUG_MASTER(GlobalSummaryLine1)
 
     runNLMESample(indx, extra_args_file,"out.txt")
 DEBUG_MASTER("func --> runNLMEInitialSample() Finished")
@@ -779,17 +795,19 @@ runNLMEGenericSample<- function(jobIndx) {
 DEBUG_MASTER("func --> runNLMEGenericSample() ")
 DEBUG_MASTER(Sys.info()["nodename"])
 DEBUG_MASTER(paste("Index is ",jobIndx))
- 
+
     extraArgsFile =getExtraArgumentFilename(control_lines[jobIndx])
     extraArgsFileIndx =getExtraArgumentFilenameIndex(control_lines[jobIndx])
+
 DEBUG_MASTER(extraArgsFile)
 DEBUG_MASTER(extraArgsFileIndx)
+
     if ( ! is.na(extraArgsFileIndx) ){
         lines=readLines(extraArgsFile)
         extraArgsFile=sprintf("%s.%s",extraArgsFile,extraArgsFileIndx)
         idx=as.integer(extraArgsFileIndx)
         numLines=length(lines)
-# Due to these records not all being usied in one run, we need a different 
+# Due to these records not all being used in one run, we need a different 
 # method to find num lines
 #  numLinesPerRecord=numLines/num_samples
         numLinesPerRecord=numLines/length(grep("-anagrad",lines))
@@ -824,8 +842,9 @@ generateFrozenModelFile <-function(origModelFilename,
                                    frozenModelFilename, 
                                    fixEffName, 
                                    frozenValue){
-
-    lines=readLines(origModelFilename)
+    localWorkingDir=get("localWorkingDir",envir=nlmeEnv)
+    lines=readLines(paste0(localWorkingDir,"/",origModelFilename))
+    frozenModelFilename=paste0(localWorkingDir,"/",frozenModelFilename)
     cat(lines,file=frozenModelFilename,sep="\n",append=FALSE)
     modelName=unlist(strsplit(lines[1], split="(",fixed=TRUE))[1]
     cat(sprintf("override %s(){",modelName),file=frozenModelFilename,sep="\n",append=TRUE)
@@ -993,17 +1012,20 @@ figureOutMpiNumCores <-function(num_samples){
 
     column_def_file=get("column_def_file",envir=nlmeEnv)
     data_file=get("data_file",envir=nlmeEnv)
+    localWorkingDir=get("localWorkingDir",envir=nlmeEnv)
 
-    smallestPopulation=getNumSubjects(column_def_file, data_file )
+    smallestPopulation=getNumSubjects(paste0(localWorkingDir,"/",
+                                             column_def_file), 
+                                      paste0(localWorkingDir,"/",data_file ))
 
     num_cores=mpiAutoNumCores(num_samples,smallestPopulation)
 DEBUG_MASTER(paste("num_samples",num_samples,"smallestPopulation",smallestPopulation,"num_cores",num_cores))
     return(num_cores)
 }
 
-figureOutMpiNumCoresForPop <-function(num_samples,control_file){
+figureOutMpiNumCoresForPop <-function(num_samples,control_file,localDir){
 
-    smallestPopulation=getMinimumNumSubjects(control_file)
+    smallestPopulation=getMinimumNumSubjects(control_file,localDir)
 
     num_cores=mpiAutoNumCores(num_samples,smallestPopulation)
 
@@ -1353,8 +1375,16 @@ files= c( "VarCoVar.csv","doses.csv", "err2.txt", "err1.txt", "IniCovr.txt", "Mu
     } else {
         ProgressStatus = get("ProgressStatus",envir=nlmeEnv)
         progress = ProgressStatus 
-        numSamples = numFailed = progress$NumOfSamples
-        numSuccessful = 0 
+        GlobalSummaryLine1 = "Failed running initial estimates"
+        assign("GlobalSummaryLine1",GlobalSummaryLine1,envir=nlmeEnv)
+
+        GlobalSummaryLine2 = ""
+        assign("GlobalSummaryLine2",GlobalSummaryLine2,envir=nlmeEnv)
+        GlobalSummaryLine3 = ""
+        assign("GlobalSummaryLine3",GlobalSummaryLine3,envir=nlmeEnv)
+        assign("ProgressStatus",progress,envir=nlmeEnv)
+        
+        numSamples = numFailed = numSuccessful = progress$NumOfSamples
         UpdateProgress(numSamples,numSuccessful, numFailed, 0 )
         FailProgress()
         return(FALSE)
@@ -1412,7 +1442,10 @@ DEBUG_MASTER(paste("exePostfix",exePostfix))
             path=Sys.getenv("PATH")
             tokens=unlist(strsplit(path,split=";"))
             for ( t in tokens ) { 
-                t = gsub("//","/",shortPathName(t),fixed=TRUE)
+                if ( Sys.info()["sysname"] == "Windows" )
+                    t = gsub("//","/",shortPathName(t),fixed=TRUE)
+                else
+                    t = gsub("//","/",t,fixed=TRUE)
                 fullPath= file.path(t,"SignTool.exe")
                 if ( file.exists(fullPath) ) {
                     installDir=Sys.getenv("INSTALLDIR")
@@ -1872,8 +1905,12 @@ memory_usage(nlmeEnv)
     else {
         if ( UsingBatchTools == TRUE )   {
 DEBUG_MASTER(paste("numberOfChunks:",numberOfChunks))
-            chunked = chunkIds(reg=gridRegistry,ids=findJobs(reg=gridRegistry),n.chunks=numberOfChunks)
-            done <- submitJobs(reg=gridRegistry, chunked, resources = list(nodes = MpiNumCores, walltime="18:00:00") )
+
+            jobs=findJobs(reg=gridRegistry)
+            chunked = chunk(jobs$job.id,n.chunks=numberOfChunks,shuffle=TRUE)
+            jobs["chunk"] = chunked
+            done <- submitJobs(reg=gridRegistry, jobs, resources = list(nodes = MpiNumCores, walltime="18:00:00") )
+
         } else {
             chunked = chunk(getJobIds(gridRegistry),n.chunks=numberOfChunks,shuffle=TRUE)
             done <- submitJobs(gridRegistry, chunked, resources = list(nodes = MpiNumCores, walltime="18:00:00") )
@@ -2457,7 +2494,7 @@ DEBUG_MASTER(paste("Received message from slave ",slave_id,tag))
             #The message contains results. The slave finished with one replicate
             #and we will now stove away the results.
             # TODO
-            # For now(for the sake of simplicity and performance),
+            # For now(for the sake of simplicity and PErformance),
             # I am keeping them all in memory but might want to flush to disk
             # when there are large number of replicates to hold
             #
@@ -2650,6 +2687,7 @@ multiCoreGeneric<-function(parallelMethod,jobType,numCoresToUse,allowIntermediat
 
 DEBUG_MASTER("multiCoreGeneric()")
 
+
     SharedWorkingDir=get("SharedWorkingDir",envir=nlmeEnv)
     num_samples=as.integer(get("num_samples",envir=nlmeEnv))
     assign("jobType", jobType, envir=nlmeEnv)
@@ -2678,6 +2716,7 @@ DEBUG_MASTER("multiCoreGeneric()")
         stat=OLDrunNLMEInitialRun()
         if ( stat == FALSE ) 
             return(list(stat=FALSE,done=c()))
+
         generateInitialEstimatesFiles()
 
         lines=readLines(extra_args_file)
@@ -2695,7 +2734,6 @@ DEBUG_MASTER("multiCoreGeneric()")
     else {
         compileAndLinkNLME()
     }
-
     setwd(currWorkDir)
 
     setwd(currWorkDir)
@@ -2975,7 +3013,7 @@ collectJobErrorLogs<-function(localDir,done, copyFilesFlag = FALSE ){
 
 DEBUG_MASTER(paste("collectJobErrorLogs()"))
 
-    files=c("err2.txt")
+    files=c("err2.txt","integration_erros.txt")
     SharedWorkingDir=get("SharedWorkingDir",envir=nlmeEnv)
     UsingBatchTools=get("UsingBatchTools",envir=nlmeEnv)
     baseDirectory = getBatchDirectoryLocation(SharedWorkingDir)
@@ -2984,20 +3022,35 @@ DEBUG_MASTER(paste("collectJobErrorLogs()"))
     #
     # Return files from individual runs.
     #
+    # If Failed with no jobs, this is the initial estimates run
+    if ( is.null(done) ) {
+        if ( copyFilesFlag ) {
+            f="err2.txt"
+            file.copy(sprintf("%s/%s",SharedWorkingDir,f),sprintf("%s/%s",localDir,f),overwrite=TRUE)
+            lines=readLines(sprintf("%s/%s",localDir,f))
+DEBUG_MASTER(paste(lines))
+            print(lines)
+        }
+    }
+    else
     for ( job in done ) {
         baseIndx=job %% 100
         wd=sprintf("%s/jobs/%02d/%d/",baseDirectory,baseIndx,job)
 
         #
         # These are files that get tagged with jobname
-        for ( f in strsplit(files,split=" ") ){
+        for ( f in files) {
             if ( copyFilesFlag ) {
+if ( file.exists(sprintf("%s/%s",wd,f)) ) {
                 DEBUG_MASTER(paste("Copy From:",sprintf("%s/%s",wd,f)," To : ",sprintf("%s/%s.Job%0d",localDir,f,job)))
                 file.copy(sprintf("%s/%s",wd,f),sprintf("%s/%s.Job%0d",localDir,f,job))
                 lines=readLines(sprintf("%s/%s.Job%0d",localDir,f,job))
 DEBUG_MASTER(paste(lines))
+                print(sprintf("---- %s.Job%0d ----",f,job))
                 print(lines)
             }
+          }
+
         }
     }
 
@@ -3102,15 +3155,26 @@ getGenericResultsList <-function(control_lines){
 
 #
 # Grab the extra argument file name ( i.e. nlmeargs.txt ) out of a line
+# To 
 #
 getExtraArgumentFilename <-function(line){
     fileRec=unlist(strsplit(line, split=",") )[2]
-    file=unlist(strsplit(fileRec, split=":") )[1]
+    # To handle windows full paths, allow for drive specification
+    tokens=unlist(strsplit(fileRec, split=":") )
+    if ( length(tokens) > 2 ) {
+        file=paste0(tokens[1],":",tokens[2])
+    } else
+        file=tokens[1]
     return(file)
 }
 getExtraArgumentFilenameIndex <-function(line){
     fileRec=unlist(strsplit(line, split=",") )[2]
-    fileIndex=unlist(strsplit(fileRec, split=":") )[2]
+    tokens=unlist(strsplit(fileRec, split=":") )
+    if ( length(tokens) > 2 ) {
+        fileIndex=tokens[3]
+    }
+    else
+        fileIndex=tokens[2]
     return(fileIndex)
 }
 
@@ -3202,6 +3266,21 @@ bootOmegaStderrFilename="BootOmegaStderr.csv"
 bootVarCoVarFilename="BootVarCoVar.csv"
 
 DEBUG_MASTER("---summarizeBootstrap()---")
+        ProgressStatus = get("ProgressStatus",envir=nlmeEnv)
+        progress = ProgressStatus 
+
+        GlobalSummaryLine1 = "Summarizing bootstrap results"
+        assign("GlobalSummaryLine1",GlobalSummaryLine1,envir=nlmeEnv)
+
+        GlobalSummaryLine2 = ""
+        assign("GlobalSummaryLine2",GlobalSummaryLine2,envir=nlmeEnv)
+        GlobalSummaryLine3 = ""
+        assign("GlobalSummaryLine3",GlobalSummaryLine3,envir=nlmeEnv)
+        assign("ProgressStatus",progress,envir=nlmeEnv)
+        
+        numSamples = numSuccessful = progress$NumOfSamples
+        UpdateProgress(numSamples,numSuccessful, 0, 0 )
+
 DEBUG_MASTER(localWorkingDir)
 tryCatch (
 {
@@ -3526,7 +3605,9 @@ tryCatch (
     }
 
 },
-         error=function(ex){
+    error=function(ex){
+    DEBUG_MASTER("Failed to summarize bootstrap results")
+    print(paste("Failed to summarize bootstrap , ERROR is : ",ex))
 })
 
 }
@@ -5928,11 +6009,21 @@ DEBUG_MASTER(rowcol)
 #
 # Given a filename:recordno
 # read the lines
-readNlmeArgsFile <- function(filespec){
+readNlmeArgsFile <- function(filespec,localWorkingDir){
 
-    filename=strsplit(filespec,":")[[1]][1]
-    record=as.integer(strsplit(filespec,":")[[1]][2])
-    allLines = readLines(filename)
+    tokens=unlist(strsplit(filespec,":"))
+    if ( length(tokens) > 2 )  {
+        filename=paste0(tokens[1],":",tokens[2])
+        record = as.integer(tokens[3])
+    }
+    else {
+        filename=tokens[1]
+        record = as.integer(tokens[2])
+    }
+    if ( dirname(filename) == "." ) 
+        allLines = readLines(paste0(localWorkingDir,"/",filename))
+    else
+        allLines = readLines(filename)
     numRecords=length(grep("/o",allLines,fixed=TRUE))
     numArgsLines=length(allLines)/numRecords
     startRec=numArgsLines * ( record -1 ) + 1 
@@ -5954,21 +6045,23 @@ readNlmeArgsFile <- function(filespec){
 sortByColumnAndGenerateControlFile<-function(inputFilename,numColumns, columnNamesArray,argsFile,controlFilename) {
 
 numRuns = 0
+
+    localWorkingDir = get("localWorkingDir",envir=nlmeEnv)
+
     # NLME combined arugments file
-    combinedArgsFilename=sprintf("%s_combined_args.txt",strsplit(controlFilename,'[.]')[[1]][1])
+    combinedArgsFilename=sprintf("%s_combined_args.txt",
+                       strsplit(basename(controlFilename),'[.]')[[1]][1])
+    fullPathCombinedArgsFilename=paste0(localWorkingDir,"/",combinedArgsFilename)
     # Split the data set into multiple ones
-#    data=read.csv(inputFilename)
-#    cn[1]=gsub("X..","",cn[1],fixed=TRUE)
-    data=read.csv(inputFilename,check.names=FALSE)
+    data=read.csv(paste0(localWorkingDir,"/",inputFilename),check.names=FALSE)
     cn=colnames(data)
     cn[1]=gsub("^##","",cn[1],fixed=FALSE)
     colnames(data)=cn
 
     fName2="data2.txt"
-    if ( file.exists(fName2) ) {
-        data2=read.csv(fName2,check.names=FALSE)
+    if ( file.exists(paste0(localWorkingDir,"/",fName2)) ) {
+        data2=read.csv(paste0(localWorkingDir,"/",fName2),check.names=FALSE)
         cn=colnames(data2)
-#        cn[1]=gsub("X..","",cn[1],fixed=TRUE)
         cn[1]=gsub("^##","",cn[1],fixed=FALSE)
         colnames(data2)=cn
     } else
@@ -6059,7 +6152,7 @@ numRuns = 0
     nxtSeq = 1
     outfileSeq = 1
     flag=FALSE
-    posthocTables=getTableNames("cols1.txt")
+    posthocTables=getTableNames(paste0(localWorkingDir,"/cols1.txt"))
     for ( indx in 1:numSortDatasets ) {
         for ( scenario in 1:numScenarios ) {
             for ( prof in 1:numProfileVariables ) {
@@ -6072,7 +6165,7 @@ numRuns = 0
                 generalFilesToRetrieve=tokens[5]
                 jobFilesToRetrieve=tokens[6]
                 # Write out a record in new nlmearguments file
-                nlmearguments=readNlmeArgsFile(tokens[2])
+                nlmearguments=readNlmeArgsFile(tokens[2],localWorkingDir)
                 for ( i in 1:(length(nlmearguments)-1)){
                 # Lets make sure that we replace data2.txt with data2.txt.i , etc
                     argsLine=nlmearguments[i]
@@ -6081,7 +6174,7 @@ numRuns = 0
                         to=sprintf("data%d.txt.%d",j,indx)
                         argsLine=gsub(from,to,argsLine)
                     }
-                    cat(argsLine,file=combinedArgsFilename,sep="\n",append=flag)
+                    cat(argsLine,file=fullPathCombinedArgsFilename,sep="\n",append=flag)
                     flag=TRUE
                 }
 #            cat(outputFilename,file=combinedArgsFilename,sep="\n",append=flag)
@@ -6090,18 +6183,17 @@ numRuns = 0
                     postFix=""
                 else
                     postFix=paste(",",listOfProfileModels[[prof]]$exePostfix)
-#                line=sprintf("%s,%s:%d,,%s,%s,%s %s %s %s",scenarioName,combinedArgsFilename,nxtSeq,outputFilename,generalFilesToRetrieve, jobFilesToRetrieve,posthocTables, outputFilename,postFix)
                 line=sprintf("%s,%s:%d,,%s,%s,%s %s %s %s",scenarioName,combinedArgsFilename,outfileSeq,outputFilename,generalFilesToRetrieve, jobFilesToRetrieve,posthocTables, outputFilename,postFix)
                 cat(line ,file=controlFilename,sep="\n",append=TRUE)
                 if ( numSortDatasets > 1 ) {
-                    filename=sprintf("%s.%d",inputFilename,indx)
+                    filename=sprintf("%s/%s.%d",localWorkingDir,inputFilename,indx)
                     names=colnames(outTables[[indx]])
                     if ( length(grep("##",names[1])) == 0 ) 
                         names[1]=sprintf("##%s",names[1])
                     colnames(outTables[[indx]])=names
                     write.csv(outTables[[indx]],file=filename,row.names=FALSE,quote=FALSE)
                     if ( length(data2) != 0 ) {
-                        filename2=sprintf("%s.%d",fName2,indx)
+                        filename2=sprintf("%s/%s.%d",localWorkingDir,fName2,indx)
                         names=colnames(outTables2[[indx]])
                         if ( length(grep("##",names[1])) == 0 ) 
                             names[1]=sprintf("##%s",names[1])
@@ -6115,7 +6207,7 @@ numRuns = 0
                 }
                 overwrite=TRUE
 
-                cat(sprintf(" cols1.txt %s %s",filename,outputFilename),file=combinedArgsFilename,sep="\n",append=overwrite)
+                cat(sprintf(" cols1.txt %s %s",basename(filename),outputFilename),file=fullPathCombinedArgsFilename,sep="\n",append=overwrite)
                 outfileSeq = outfileSeq + 1 
             }
             nxtSeq = nxtSeq + 1 
@@ -6741,6 +6833,7 @@ DEBUG_MASTER(paste("Done with waitTillAllJobsAreFinished()"))
 performBootstrap<-function(args,allowIntermediateResults=TRUE,reportProgress=FALSE){
 DEBUG_MASTER("func --> performBootstrap() <---")
 
+cwd=getwd()
     cleanupFromPreviousRun()
     localWorkingDir= gsub("\\","/",args[4],fixed=TRUE)
     assign("localWorkingDir", localWorkingDir, envir=nlmeEnv)
@@ -6822,6 +6915,10 @@ DEBUG_MASTER("func --> performBootstrap() <---")
         ReportProgress()
         RunningOnGrid = FALSE 
         stat = FALSE
+
+cwd=getwd()
+
+
         if ( tolower(parallelMethod) == "none" ) {
             done=1:num_samples
             ret = multiCoreGeneric(parallelMethod,"BOOTSTRAP",num_processes,reportProgress=reportProgress)
@@ -6831,7 +6928,7 @@ DEBUG_MASTER("func --> performBootstrap() <---")
             ret = multiCoreGeneric(parallelMethod,"BOOTSTRAP",num_processes,reportProgress=reportProgress)
             stat = ret$stat
             done = ret$done
-            if ( !IsEarlyTerminationRequested() ) 
+            if ( !IsEarlyTerminationRequested() && ! is.null(done) ) 
                 done=1:num_samples
         } else if ( tolower(parallelMethod) == "local_mpi" ) {
             MpiExecutable="mpiNLME7.exe"
@@ -6900,7 +6997,9 @@ assign("GlobalSummaryLine1", GlobalSummaryLine1, envir=nlmeEnv)
 
         }
         if ( stat == FALSE ) {
-            done=1:num_samples
+
+            if ( ! is.null(done) ) 
+                done=1:num_samples
             collectJobErrors(localWorkingDir, "BOOTSTRAP", done, control_lines)
         }
         if ( !IsJobCanceled() ) {
@@ -6949,30 +7048,44 @@ DEBUG_MASTER("mpi.exit()")
         }
     },
         error=function(ex){
+browser()
         DEBUG_MASTER("Failed to performBootstrap()")
         DEBUG_MASTER(paste("Error is : ",ex))
         print("Failed to performBootstrap()")
         print(paste("Error is : ",ex))
         FailProgress()
+setwd(cwd)
     })
     }
+setwd(cwd)
 }
 
 #'
 #' @export parseControlFile
 #'
-parseControlFile <-function(controlFile)
+parseControlFile <-function(localDir,controlFile)
 {
-    lines=readLines(controlFile)
+    if ( dirname(controlFile) == ".") 
+        lines=readLines(paste0(localDir,"/",controlFile))
+    else
+        lines=readLines(controlFile)
     modelFile=lines[1]
     filesToCopy=lines[2]
     colFile=unlist(strsplit(filesToCopy," "))[2]
     dataFile=unlist(strsplit(filesToCopy," "))[3]
     controlLine=lines[5]
     argsFile=unlist(strsplit(controlLine,","))[2]
-    argsFile=unlist(strsplit(argsFile,":"))[1]
+    tokens=unlist(strsplit(argsFile,":"))
+    if ( length(tokens) > 2 ) 
+        argsFile=paste0(tokens[1],":",tokens[2])
+    else
+        argsFile=tokens[1]
+#    argsFile=unlist(strsplit(argsFile,":"))[1]
     outputFile=unlist(strsplit(controlLine,","))[4]
-    lines=readLines(argsFile)
+    if ( dirname(argsFile) == ".") 
+        lines=readLines(paste0(localDir,"/",argsFile))
+    else 
+        lines=readLines(argsFile)
     for ( l in lines ) {
         pos=unlist(strsplit(l,split="/m "))
         if ( length(pos) > 1 ) 
@@ -6995,9 +7108,12 @@ parseControlFile <-function(controlFile)
 #'
 performBootstrap2<-function(args,allowIntermediateResults=TRUE,reportProgress=FALSE)
 {
+
+
     cleanupFromPreviousRun()
     controlFile=args[[6]]
-    stuff=parseControlFile(controlFile)
+    localWorkingDir=args[[5]]
+    stuff=parseControlFile(localWorkingDir,controlFile)
     modelFile=stuff[1]
     colDefFile=stuff[2]
     dataFile=stuff[3]
@@ -7172,8 +7288,12 @@ DEBUG_MASTER(" END generateJobResults()")
 #
 # Get the number of subjects in a dataset
 #
-getNumSubjects <- function(colDefFile,dataFile){
+getNumSubjects <- function(colDefFile,dataFile,localDir=""){
 
+    if ( localDir != "" ) {
+        colDefFile=paste0(localDir,"/",colDefFile)
+        dataFile=paste0(localDir,"/",dataFile)
+    }
     lines=readLines(colDefFile)
     lineNo=grep("id",lines)
     numSubjects = 0
@@ -7194,15 +7314,21 @@ getNumSubjects <- function(colDefFile,dataFile){
 #
 # Get the smallest population in a run
 #
-getMinimumNumSubjects<- function(controlFile){
-    lines=readLines(controlFile)
+getMinimumNumSubjects<- function(controlFile,localDir){
+    if ( dirname(controlFile) == ".") 
+        lines=readLines(paste0(localDir,"/",controlFile))
+    else
+        lines=readLines(controlFile)
     numReplicates=as.integer(lines[4])
     smallestPopulation=9999999
     for ( n in 1:numReplicates ) {
         extraArgsFile =getExtraArgumentFilename(lines[n+4])
         extraArgsFileIndx =getExtraArgumentFilenameIndex(lines[n+4])
         idx=as.integer(extraArgsFileIndx)
-        extraLines=readLines(extraArgsFile)
+        if ( dirname(extraArgsFile) == "." ) 
+            extraLines=readLines(paste0(localDir,"/",extraArgsFile))
+        else
+            extraLines=readLines(extraArgsFile)
         numLines=length(extraLines)
         numLinesPerRecord=numLines/length(grep("-anagrad",extraLines))
         colnameFile="cols1.txt"
@@ -7217,7 +7343,7 @@ getMinimumNumSubjects<- function(controlFile){
                  }
              }
         }
-        num=getNumSubjects(colnameFile,dataFilename)
+        num=getNumSubjects(colnameFile,dataFilename,localDir)
         if ( num < smallestPopulation )
             smallestPopulation = num
     }
@@ -7279,6 +7405,7 @@ DEBUG_MASTER(progressStage)
 DEBUG_MASTER(func)
 DEBUG_MASTER(func_arg)
 
+
     if ( length(args) != 8 ) {
         print("USAGE:performParallelNLMERun.r jobType parallelMethod install_dir shared_directory localWorkingDir controlFile NumProc workflow_name")
     }
@@ -7316,9 +7443,13 @@ DEBUG_MASTER(func_arg)
         assign("localWorkingDir", localWorkingDir, envir=nlmeEnv)
         TrackingJobHistoryInitialization()
 
-        control_file=args[6]
+#        control_file=args[6]
+        control_file=gsub("\\","/",args[6],fixed=TRUE)
         assign("control_file", control_file , envir=nlmeEnv)
-        lines = readLines(control_file)
+        if ( dirname(control_file) == "." ) 
+            lines = readLines(paste0(localWorkingDir,"/",control_file))
+        else
+            lines = readLines(control_file)
         control_lines=lines[5:length(lines)]
         assign("control_lines", control_lines , envir=nlmeEnv)
         model_file=lines[1]
@@ -7342,7 +7473,7 @@ DEBUG_MASTER(func_arg)
             if ( tolower(parallelMethod) == "local_mpi" ) 
                 num_cores=num_processes
             else
-                num_cores = figureOutMpiNumCoresForPop(num_samples,control_file)
+                num_cores = figureOutMpiNumCoresForPop(num_samples,control_file,localWorkingDir)
         }
 
         assign("workflow_name",args[8],envir=nlmeEnv)
@@ -7366,6 +7497,8 @@ DEBUG_MASTER(paste("performParallel workflow_name",args[8]))
         assign("MpiArgument", MpiArgument , envir=.GlobalEnv)
         assign("MpiLocal", MpiLocal , envir=.GlobalEnv)
         assign("MpiNumCores", MpiNumCores , envir=.GlobalEnv)
+cwd=getwd()
+
         if ( tolower(parallelMethod) == "none" ) {
             UsingBatchTools=FALSE
             assign("UsingBatchTools", UsingBatchTools, envir=nlmeEnv)
@@ -7511,26 +7644,29 @@ DEBUG_MASTER("mpi.exit()")
 
     }
 DEBUG_MASTER("END OF performParallelNLMERun()")
+setwd(cwd)
     return(jobHome)
 }
 
-generateCovarSearchArgsFile <- function(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray)
+generateCovarSearchArgsFile <- function(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,workingDir)
 {
 DEBUG_MASTER("generateCovarSearchArgsFile")
+    controlFilenameFullpath=paste0(workingDir,"/",controlFilename)
+    nlmeArgsFileFullpath=paste0(workingDir,"/",nlmeArgsFile)
     appendFlag=FALSE
-    nlmeArgLines=readLines(nlmeArgsFilename)
+    nlmeArgLines=readLines(paste0(workingDir,"/",nlmeArgsFilename))
     numTodo = as.integer(numCovariates)
     submodels=c()
     for ( i in 1:numTodo ){
         submodels=c(submodels,FALSE)
     }
-    cat(modelFilename,file=controlFilename,sep="\n",append=FALSE)
+    cat(modelFilename,file=controlFilenameFullpath,sep="\n",append=FALSE)
     for ( ifn in inputFileArray ) {
-        cat(ifn,file=controlFilename,sep=" ",append=TRUE)
+        cat(ifn,file=controlFilenameFullpath,sep=" ",append=TRUE)
     }
-    cat("",file=controlFilename,sep="\n",append=TRUE)
-    cat("*.csv *.txt *.log *.LOG",file=controlFilename,sep="\n",append=TRUE)
-    cat((numTodo * numTodo ) ,file=controlFilename,sep="\n",append=TRUE)
+    cat("",file=controlFilenameFullpath,sep="\n",append=TRUE)
+    cat("*.csv *.txt *.log *.LOG",file=controlFilenameFullpath,sep="\n",append=TRUE)
+    cat((numTodo * numTodo ) ,file=controlFilenameFullpath,sep="\n",append=TRUE)
     nxtScenario=0
     scenarioBase="cshot"
     outputBase="out"
@@ -7561,18 +7697,18 @@ DEBUG_MASTER("generateCovarSearchArgsFile")
             if ( submodels[i] ) 
                 break
         }
-        cat(nxtScenarioName,file=controlFilename,sep="",append=TRUE)
-        cat(nxtScenarioDescription,file=controlFilename,sep=",",append=TRUE)
-        cat(sprintf(",%s:%d,",nlmeArgsFile,nxtScenario+1),file=controlFilename,sep=",",append=TRUE)
-        cat(sprintf(",%s,%s,progress.txt",outputFile,outputFile),file=controlFilename,sep="\n",append=TRUE)
+        cat(nxtScenarioName,file=controlFilenameFullpath,sep="",append=TRUE)
+        cat(nxtScenarioDescription,file=controlFilenameFullpath,sep=",",append=TRUE)
+        cat(sprintf(",%s:%d,",nlmeArgsFile,nxtScenario+1),file=controlFilenameFullpath,sep=",",append=TRUE)
+        cat(sprintf(",%s,%s,progress.txt",outputFile,outputFile),file=controlFilenameFullpath,sep="\n",append=TRUE)
         
-        cat(sprintf("/xe %s",argFlag), file=nlmeArgsFile, sep="\n",append=appendFlag)
+        cat(sprintf("/xe %s",argFlag), file=nlmeArgsFileFullpath, sep="\n",append=appendFlag)
         appendFlag=TRUE
         for ( l in nlmeArgLines ) {
             l=gsub("out.txt","",l,fixed=TRUE) # get read of out.txt if there is any
-            cat(l, file=nlmeArgsFile, sep="\n",append=appendFlag)
+            cat(l, file=nlmeArgsFileFullpath, sep="\n",append=appendFlag)
         }
-        cat(sprintf(" %s",outputFile), file=nlmeArgsFile, sep="\n",append=appendFlag)
+        cat(sprintf(" %s",outputFile), file=nlmeArgsFileFullpath, sep="\n",append=appendFlag)
         if ( done == TRUE ) 
             break
         nxtScenario = nxtScenario + 1 
@@ -7611,6 +7747,7 @@ DEBUG_MASTER("generateCovarSearchArgsFile")
 performShotgunCovarSearch<-function(args,reportProgress=FALSE){
 DEBUG_MASTER("func --> performShotgunCovarSearch()")
 
+
     localWorkingDir= gsub("\\","/",args[4],fixed=TRUE)
     assign("localWorkingDir", localWorkingDir, envir=nlmeEnv)
     updateInitialStatus("Shotgun Covariate Search",args[1],localWorkingDir)
@@ -7620,8 +7757,9 @@ DEBUG_MASTER("func --> performShotgunCovarSearch()")
     else {
     tryCatch (
     {
-        controlFilename = "nlmeControlFile.txt"
-        argsFileName = "nlmeargsCombined.txt" 
+        controlFilename = paste0(localDir,"/nlmeControlFile.txt")
+        nlmeArgsFile = paste0(localDir,"/nlmeargsCombined.txt" )
+
         generateCovarSearchArgsFile(controlFilename, argsFileName, args[5],args[6],args[7],args[8],args[9])
         argList=c()
         argList=c(argList,"COVAR_SEARCH")
@@ -7660,9 +7798,12 @@ DEBUG_MASTER(paste("workflowname",workflow_name))
 #    status              : 
 #    logLikelihood       :
 #
-generateSelCovarSearchArgsLine <- function(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,submodels,nxtScenario,appendFlag,argsIndex)
+generateSelCovarSearchArgsLine <- function(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,submodels,nxtScenario,appendFlag,argsIndex,localDir)
 {
-    nlmeArgLines=readLines(nlmeArgsFilename)
+    if ( dirname(nlmeArgsFilename) == "." ) 
+        nlmeArgLines=readLines(paste0(localDir,"/",nlmeArgsFilename))
+    else
+        nlmeArgLines=readLines(nlmeArgsFilename)
     numTodo = as.integer(numCovariates)
     scenarioBase="cstep"
     outputBase="out"
@@ -7738,7 +7879,7 @@ generateSelCovarSearchArgsLine <- function(controlFilename, nlmeArgsFile , model
 # 
 # Returns : Name of the output files to generate
 #
-generateInitialScenarios <- function(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray, nxtScenario)
+generateInitialScenarios <- function(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray, nxtScenario,localDir)
 {
     outputFilenames=c()
     indexes=c()
@@ -7770,7 +7911,7 @@ generateInitialScenarios <- function(controlFilename, nlmeArgsFile , modelFilena
     for ( i in 0:numTodo ) {
         if ( i > 0 ) 
             submodels[i]=TRUE
-        ret = generateSelCovarSearchArgsLine (controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,submodels,nxtScenario,appendFlag,indx)
+        ret = generateSelCovarSearchArgsLine (controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,submodels,nxtScenario,appendFlag,indx,localDir)
         if ( length(scenarios[[ret$key]] ) != 0 ) {
             if ( scenarios[[ret$key]]$status == "Completed" ) 
             return(scenarios[[ret$key]])
@@ -7867,8 +8008,9 @@ DEBUG_MASTER(paste("listIndex:",listIndex))
 DEBUG_MASTER(paste("si:",si))
 DEBUG_MASTER(paste("scenarioName:",scenarios[[si]]$scenarioName))
 DEBUG_MASTER(paste("chisq:",chisq))
-        if ( file.exists(f) ) {
-        lines=readLines(f)
+        fullPath=paste0(localDir,"/",f)
+        if ( file.exists(fullPath) ) {
+        lines=readLines(fullPath)
         a=grep("LogLikelihood ",lines)
         if ( length(a) != 0 ){
             line=lines[a]
@@ -8034,6 +8176,7 @@ print(ex)
 performStepwiseCovarSearch<-function(args,reportProgress=FALSE){
 DEBUG_MASTER("func --> performStepwiseCovarSearch()")
 
+cwd=getwd()
     localWorkingDir= gsub("\\","/",args[4],fixed=TRUE)
     assign("localWorkingDir", localWorkingDir, envir=nlmeEnv)
     updateInitialStatus("Stepwise Covariate Search",args[1],localWorkingDir)
@@ -8044,12 +8187,12 @@ DEBUG_MASTER("func --> performStepwiseCovarSearch()")
     else {
         tryCatch (
         {
-            controlFilename = "nlmeControlFile.txt"
-            nlmeArgsFile = "nlmeargsCombined.txt" 
             parallelMethod=args[1]
             installDir=args[2]
             sharedDir=args[3]
             localDir=args[4]
+            controlFilename = paste0(localDir,"/nlmeControlFile.txt")
+            nlmeArgsFile = paste0(localDir,"/nlmeargsCombined.txt" )
             modelFilename=args[5]
             nlmeArgsFilename=args[6]
             inputFileArray=args[7]
@@ -8068,13 +8211,12 @@ DEBUG_MASTER("func --> performStepwiseCovarSearch()")
             workflow_name=args[14]
             nxtScenario = 0 
             assign("workflow_name", workflow_name, envir=nlmeEnv)
-
 #
 # Step 1 .  Run zero-N searches
 #
             scenarios=list()
             assign("scenarios", scenarios, envir=nlmeEnv)
-            scenarioIndexes=generateInitialScenarios(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray, nxtScenario)
+            scenarioIndexes=generateInitialScenarios(controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray, nxtScenario,localDir)
 
             scenarios = get("scenarios",envir=nlmeEnv)
             nxtScenario = get("nxtScenario",envir=nlmeEnv)
@@ -8107,9 +8249,20 @@ DEBUG_MASTER("func --> performStepwiseCovarSearch()")
                 #
                 # Pick the best run
                 #
-                stepwiseFilename="Stepwise.txt" 
+                stepwiseFilename=paste0(localDir,"/Stepwise.txt" )
+
                 currentBestIndex=getBestResults(localDir,scenarioIndexes,criteria,degreesOfFreedomString,addPValue,stepwiseFilename,currentBestIndex,"add",TRUE)
+
                 scenarios = get("scenarios",envir=nlmeEnv)
+
+                #
+                # Nothing todo, the best results is the one with no covariates
+                #
+                if ( currentBestIndex == -1 ) {
+                    print("Model without covariate effects has the best fit!")
+                }
+            else {
+
                 s=scenarioIndexes[currentBestIndex]
 DEBUG_MASTER(paste(".......",s))
                 currentBestScenario = scenarios[[s]]$index
@@ -8163,7 +8316,7 @@ DEBUG_MASTER(paste(".......",s))
                             newDegreesOfFreedomString = paste(newDegreesOfFreedomString,degOfFreedom,sep=",")
                         firstTime = FALSE
                         subArgs=submodels
-                        ret = generateSelCovarSearchArgsLine (controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,subArgs,nxtScenario,appendFlag,indx)
+                        ret = generateSelCovarSearchArgsLine (controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,subArgs,nxtScenario,appendFlag,indx,localDir)
 DEBUG_MASTER(paste(".......",ret$key))
                         if ( length(scenarios[[ret$key]] ) != 0 ) {
                            if ( scenarios[[ret$key]]$status == "Completed" )  {
@@ -8270,7 +8423,7 @@ DEBUG_MASTER(paste(".......",ret$key))
                             if ( submodels[i] == TRUE )  {
                                 submodels[i] = FALSE
                                 subArgs=submodels
-                                ret = generateSelCovarSearchArgsLine (controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,subArgs,nxtScenario,appendFlag,indx)
+                                ret = generateSelCovarSearchArgsLine (controlFilename, nlmeArgsFile , modelFilename, nlmeArgsFilename, inputFileArray, numCovariates, covarNamesArray,subArgs,nxtScenario,appendFlag,indx,localDir)
                                 if ( length(scenarios[[ret$key]] ) != 0 ) {
                                     if ( scenarios[[ret$key]]$status == "Completed" ) 
                                         scenarioAlreadyRan = TRUE
@@ -8354,6 +8507,7 @@ DEBUG_MASTER(paste(".......",ret$key))
                             notDone = FALSE 
                     }
                 }
+            }
 #
 # Report the best combination
 #
@@ -8366,8 +8520,10 @@ DEBUG_MASTER(paste(".......",ret$key))
             }
             },
             error=function(ex){
+browser()
                 print(ex)
                 FailProgress()
+                setwd(cwd)
             })
 
             if ( !IsJobCanceled() ) {
@@ -8388,6 +8544,7 @@ DEBUG_MASTER(parallelMethod)
         }
         assign("jobHomeDirectories", jobHomeDirectories , envir=.GlobalEnv)
     }
+    setwd(cwd)
 }
 
 
@@ -8436,6 +8593,8 @@ performEstimationOnSortColumns<-function(args,reportProgress=FALSE){
 DEBUG_MASTER("func --> performEstimationOnSortColumns()")
 DEBUG_MASTER(paste(args))
 
+    cwd=getwd()
+
     cleanupFromPreviousRun()
     localWorkingDir= gsub("\\","/",args[4],fixed=TRUE)
     assign("localWorkingDir", localWorkingDir, envir=nlmeEnv)
@@ -8446,7 +8605,7 @@ DEBUG_MASTER(paste(args))
     else {
     tryCatch (
     {
-        controlFilename = "NewnlmeControlFile.txt"
+        controlFilename = paste0(localWorkingDir,"/NewnlmeControlFile.txt")
         parallelMethod=args[1]
         installDir=args[2]
         sharedDir=args[3]
@@ -8464,7 +8623,6 @@ DEBUG_MASTER(paste(args))
 #
 
         numDatasets=sortByColumnAndGenerateControlFile("data1.txt",numColumns, columnNamesArray,nlmeArgsFilename,controlFilename) 
-
         argList=c()
         argList=c(argList,"ESTIMATION_RUN")
         argList=c(argList,parallelMethod)
@@ -8480,12 +8638,15 @@ DEBUG_MASTER(paste(args))
 
     },
     error=function(ex){
+browser()
         print(ex)
         FailProgress()
+        setwd(cwd)
     })
     }
 #    if ( !IsJobCanceled() )
 #        CompleteProgress()
+    setwd(cwd)
 } 
 
 cleanupFromPreviousRun <-function(){
@@ -8520,6 +8681,7 @@ performProfileEstimation<-function(args,reportProgress=FALSE){
 DEBUG_MASTER("func --> performProfileEstimation()")
 DEBUG_MASTER(paste(args))
 
+    cwd=getwd()
     localWorkingDir= gsub("\\","/",args[4],fixed=TRUE)
     assign("localWorkingDir", localWorkingDir, envir=nlmeEnv)
     updateInitialStatus("Profile",args[1],localWorkingDir)
@@ -8529,7 +8691,7 @@ DEBUG_MASTER(paste(args))
     else {
     tryCatch (
     {
-        controlFilename = "NewnlmeControlFile.txt"
+        controlFilename = paste0(localWorkingDir,"/NewnlmeControlFile.txt")
         parallelMethod=args[1]
         installDir=args[2]
         sharedDir=args[3]
@@ -8568,15 +8730,17 @@ DEBUG_MASTER(paste(args))
 
     },
     error=function(ex){
-print("----------------")
+browser()
         print(ex)
-print("----------------")
         FailProgress()
+    setwd(cwd)
     })
     }
     cleanupFromPreviousRun()
 #    if ( !IsJobCanceled() )
 #    CompleteProgress()
+
+    setwd(cwd)
 } 
 
 
@@ -8870,6 +9034,9 @@ nlmeEnvIsDone <-function(e){
         root=gsub("\"","",root,fixed=TRUE)
         if ( Sys.info()["sysname"] == "Windows" )
             root=shortPathName(root)
+        installDir=Sys.getenv("INSTALLDIR")
+        if ( installDir == "" )
+            Sys.setenv("INSTALLDIR"=paste0(root,"/InstallDirNLME"))
         startup=paste0(root,"/InstallDirNLME/setup_env.r")
         if ( file.exists(startup) )  {
             print(paste("INFO: Sourcing ",startup))

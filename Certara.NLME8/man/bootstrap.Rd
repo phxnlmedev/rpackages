@@ -4,19 +4,17 @@
 \alias{bootstrap}
 \title{bootstrap() : Method to execute an NLME Bootstrap}
 \usage{
-bootstrap(hostPlatform, dataset, params, bootParams, model = NULL,
+bootstrap(hostPlatform, params, bootParams, model,
   runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
 
-\item{dataset}{Dataset and model information(NlmeDataset)}
-
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
 \item{bootParams}{Bootstrap parameters(NlmeBootstrapParams)}
 
-\item{model}{Optional PK/PD model}
+\item{model}{PK/PD model}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
 }
@@ -25,13 +23,11 @@ bootstrap() : Method to execute an NLME Bootstrap
 }
 \examples{
 
-dataset = NlmeDataset()
-
 params = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
                              PARAMS_NUM_ITERATIONS=1000)
 bootParams = NlmeBootstrapParams(numReplicates=5, randomNumSeed=1234)
 
-job = bootstrap(defaultHost,dataset,params,bootParams,model)
+job = bootstrap(defaultHost,params,bootParams,model)
 
 while (!(NlmeJobStatus(job) == "Finished" || NlmeJobStatus(job) == "Failed") )
 {

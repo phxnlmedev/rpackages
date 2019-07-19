@@ -1,0 +1,7 @@
+## Default resources can be set in your .BatchJobs.R by defining the variable
+## 'default.resources' as a named list.
+
+#BSUB-M <%= resources$memory %>                     # Memory requirements in Kbytes
+
+# we merge R output with stdout from LSF, which gets then logged via -o option
+R CMD BATCH --no-save --no-restore "<%= rscript %>" /dev/stdout

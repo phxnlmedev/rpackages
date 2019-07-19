@@ -1,41 +1,10 @@
 
-#
-# Load libraries and setup paths and hosts
-#
-library(ggplot2)
-library(xpose)
-library(Certara.NLME8)
-library(RsNlme)
-library(shiny)
-
-#
-# goto your working directory where you copied the demo files
-#
-setwd("c:/Work/RsNlmeWorkDirectory")
-
-#
-# setup environment
-#
-Sys.setenv("NLME_ROOT_DIRECTORY"="c:/Work/RsNlmeWorkDirectory")
-Sys.setenv("INSTALLDIR"="C:/Program Files/R/R-3.5.1/library/Certara.NLME8/InstallDirNLME")
-# License
-#Sys.setenv("PhoenixLicenseFile"="C:\\Program Files (x86)\\Pharsight\\Phoenix\\application\\Services\\Licensing\\lservrc")
-#Sys.setenv("NLME_HASH"="xxxx")
-
-
+# Setup environment variables and loading necessary packages 
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 #
 # Look at the data
 #
-input=read.csv("PKPD_Data.csv")
-#View(input)
-#
-# Graph time vs. Conc
-#
-df=data.frame(time=input$Time,conc=input$Conc,subject=input$ID)
-ggplot(data=df,aes(x=time,y=conc))+scale_y_log10()+geom_point(colour=df$subject)+
-  geom_line(aes(x=df$time,y=df$conc,group=df$subject,colour=df$subject))
-
-
 input=read.csv("PKPD_Data.csv")
 
 df=data.frame(time=input$Time,conc=input$Conc,subject=input$ID)
@@ -79,8 +48,7 @@ initRandomEffects(pkpdmodel) = c(Diagonal,FALSE,"nEC50,nEmax,nV","0.1,0.01,0.1",
 initFixedEffects(pkpdmodel)=c(tvKe0=10,tvE0=50,tvEmax=100)
 
 
-#print(pkpdmodel)
-writeDefaultFiles(pkpdmodel,dataset)
+
 #
 # Where to execute fitting
 #
@@ -107,20 +75,20 @@ engineParams = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_ELS,
 #
 # fit the model
 #
-job=fitmodel(host,dataset,engineParams)
+job=fitmodel(host,engineParams,pkpdmodel)
 
 #
 # Look at the results
 #
 
-runStatus = read.csv("Overall.csv")
+runStatus = read.csv(paste0(pkpdmodel@modelInfo@workingDir,"/Overall.csv"))
 print(runStatus)
 
 
 library(xpose)
 library(Xpose.Nlme)
 
-xp=xposeNlme(dir="./",modelName="Initial Model")
+xp=xposeNlme(dir=pkpdmodel@modelInfo@workingDir,modelName="Initial Model")
 list_vars(xp)
 
 doxpose(xp)
@@ -140,5 +108,5 @@ eta_qq(xp)
 #
 # Accept all estimates
 #
-model=acceptAllEffects(model)
+pkpdmodel=acceptAllEffects(pkpdmodel)
 

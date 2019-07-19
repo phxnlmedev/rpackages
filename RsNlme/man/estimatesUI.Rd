@@ -4,7 +4,7 @@
 \alias{estimatesUI}
 \title{estimatesUI}
 \usage{
-estimatesUI(model, subjectIds, host = NULL)
+estimatesUI(model, subjectIds, host = NULL, dataset = NULL)
 }
 \arguments{
 \item{model}{PK/PD model}
@@ -12,6 +12,8 @@ estimatesUI(model, subjectIds, host = NULL)
 \item{subjectIds}{Subject IDs}
 
 \item{host}{Optional host parameter if model needs to be compiled}
+
+\item{dataset}{Optional dataset parameter}
 }
 \description{
 User Interface to examine the model and evaluate estimates for fixed effects
@@ -31,13 +33,13 @@ User Interface to examine the model and evaluate estimates for fixed effects
                    hasEliminationComp = FALSE,
                    isClosedForm = TRUE)
 
-   dataset=NlmeDataset()
+   dataset=NlmeDataset(model@modelInfo@workingDir)
    initColMapping(model)=input
    modelColumnMapping(model)=c(ID="xid", CObs="conc",A1="dose")
    writeDefaultFiles(model,dataset)
    estimatesUI(model,unique(input$id),host)
 
-   estimates = getInitialEstimates()
+   estimates = getInitialEstimates(model)
    print(estimates)
    initFixedEffects(model) = estimates
 

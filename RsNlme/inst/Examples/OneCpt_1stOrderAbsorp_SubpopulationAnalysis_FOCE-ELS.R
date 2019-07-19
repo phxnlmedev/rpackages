@@ -12,7 +12,8 @@
 ##############################################################################################################
 
 # Setup environment variables and loading necessary packages 
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 ##############################################################################################################
 
@@ -81,8 +82,7 @@ modelColumnMapping(model) = c(Aa = "Dose")
 ###################                    Model Fitting                                      ################### 
 
 ##############################################################################################################
-# create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
+
 
 
 # host setup: run locally with MPI enabled
@@ -101,12 +101,10 @@ engineParams = NlmeEngineExtraParams(PARAMS_METHOD = METHOD_FOCE_ELS
 # list of sort variables
 sortColumns = NlmeSortColumns("Source")
 
-# Create a new folder whose name is same as the model file name
-# and then write the model, input dataset, and mapping files into this newly created folder 
-writeDefaultFiles(model, NlmeFileNames) 
+
 
 # run the model 
-job = sortfit(host, NlmeFileNames, engineParams, sortColumns)
+job = sortfit(host, engineParams, sortColumns,model=model)
 
 
 ##############################################################################################################
@@ -116,13 +114,13 @@ job = sortfit(host, NlmeFileNames, engineParams, sortColumns)
 ##############################################################################################################
 
 # Create a xpose database object for the results obtained for Source = FM 
-xp_FM = xposeNlme(dir="./", modelName = ModelName
+xp_FM = xposeNlme(dir=model@modelInfo@workingDir, modelName = ModelName
                   , dmpFile = "dmpFM.txt"
                   , dataFile = "data1.txt.1"
                   )
 
 # Create a xpose database object for the results obtained for Source = FM 
-xp_SM = xposeNlme(dir="./", modelName = ModelName
+xp_SM = xposeNlme(dir=model@modelInfo@workingDir, modelName = ModelName
                   , dmpFile = "dmpSM.txt"
                   , dataFile = "data1.txt.2"
                   )

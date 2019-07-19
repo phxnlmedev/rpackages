@@ -72,7 +72,7 @@ rem
 
 if DEFINED INSTALLDIR goto L1
    set INSTALLDIR=%PhoenixDir%\application\lib\NLME\Executables
-rem   set INSTALLDIR=C:\Program Files (x86)\Pharsight\Phoenix\application\lib\NLME\Executables
+rem   set INSTALLDIR=C:\Program Files (x86)\Certara\Phoenix\application\lib\NLME\Executables
 :L1
 
 
@@ -81,7 +81,7 @@ IF DEFINED PhoenixGCCDir64 goto L021
 :L021
 
 IF DEFINED PhoenixMPIDir64 goto L022
-        SET PhoenixMPIDir64=C:\Program Files (x86)\Pharsight\MPICH2-1.4.1\
+        SET PhoenixMPIDir64=C:\Program Files (x86)\Certara\MPICH2-1.4.1\
 :L022
 
 
@@ -167,8 +167,8 @@ if EXIST .\Work\Model.cpp goto L06
 :L06
 
         copy /y "%INSTALLDIR%\ModelAPI.h" .\Work
-        xcopy /e /i "%INSTALLDIR%\ModelAPI" .\Work\ModelAPI
-        xcopy /e /i "%INSTALLDIR%\mutil" .\Work\mutil
+        xcopy /y /e /i "%INSTALLDIR%\ModelAPI" .\Work\ModelAPI
+        xcopy /y /e /i "%INSTALLDIR%\mutil" .\Work\mutil
         copy /y "%INSTALLDIR%\Mutil.h" .\Work
 
 REM ------------------------------------------------------
@@ -390,4 +390,4 @@ SET NLME_ARGS=%NLME_ARGS:EXECUTION_DIR\=%
 
 :exit
 
-EXIT /B
+EXIT /B %errorlevel%

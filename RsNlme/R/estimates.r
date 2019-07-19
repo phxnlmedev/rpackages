@@ -117,20 +117,36 @@ generateInitialEstimatesInput <-function(fileName,thetas,variables,sweepStart,sw
 #'@export
 #'
 
-generateGraph <-function(inputFile,outputFile){
+generateGraph <-function(workingDir,inputFile,outputFile){
 
 
-  args = paste0("/plotinascii ", inputFile, " /plotout ", outputFile,
+  cwd=getwd()
+  tryCatch(
+  {
+  setwd(workingDir)
+  args = paste0("/plotinascii ",  inputFile, " /plotout ", outputFile,
                 " /m 3 ",
                 " /n 10 ",
                 " /e -1 ",
                 " /o 6",
                 " /csv ",
                 " /sort ",
-                " cols1.txt data1.txt out.txt")
+                " cols1.txt ",
+                " data1.txt ",
+                " out.txt")
+
+
   cmd=paste0(" NLME7.exe ",args)
   print(cmd)
-  shell(cmd)
+print(getwd())
+  shell(cmd, wait = TRUE)
+print("-----")
+  setwd(cwd)
+print(getwd())
+  },
+  error = function(ex) {
+    setwd(cwd)
+  } )
 }
 
 
@@ -244,12 +260,20 @@ readModelData <-function(fileName) {
 #'
 #'@export
 #'
-compileModel <-function(host){
+compileModel <-function(model,host){
+
   installDir=host@installationDirectory
+  modelDir= model@modelInfo@workingDir
 
   script=paste0(installDir,"/","execNlmeCmd.bat")
+
+
   Sys.setenv("INSTALLDIR"=installDir)
-  args=paste0(" COMPILE test.mdl " , getwd() , " MPINO NO 1" )
+  if ( attr(host,"hostType")== "Windows" )
+      args=paste0(" COMPILE test.mdl " , gsub("/","\\",modelDir,fixed=TRUE)  , 
+                  " MPINO NO 1" )
+  else
+      args=paste0(" COMPILE test.mdl " , modelDir , " MPINO NO 1" )
   shell(paste0(script," ",args))
 }
 
@@ -264,6 +288,7 @@ compileModel <-function(host){
 #'@param model        PK/PD model
 #'@param subjectIds   Subject IDs
 #'@param host         Optional host parameter if model needs to be compiled
+#'@param dataset      Optional dataset parameter
 #'
 #'@examples
 #'    host = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
@@ -280,25 +305,30 @@ compileModel <-function(host){
 #'                    hasEliminationComp = FALSE,
 #'                    isClosedForm = TRUE)
 #'
-#'    dataset=NlmeDataset()
+#'    dataset=NlmeDataset(model@modelInfo@workingDir)
 #'    initColMapping(model)=input
 #'    modelColumnMapping(model)=c(ID="xid", CObs="conc",A1="dose")
 #'    writeDefaultFiles(model,dataset)
 #'    estimatesUI(model,unique(input$id),host)
 #'
-#'    estimates = getInitialEstimates()
+#'    estimates = getInitialEstimates(model)
 #'    print(estimates)
 #'    initFixedEffects(model) = estimates
 #'
 #'@export
 #'
 
-estimatesUI <-function(model,subjectIds,host=NULL) {
+estimatesUI <-function(model,subjectIds,host=NULL,dataset=NULL) {
 
 require(shiny)
 
+  if (  is.null(dataset) )
+      dataset=model@dataset
+  if ( ! is.null(dataset) )
+      writeDefaultFiles(model,dataset)
+
   if ( ! is.null(host ) ) {
-    compileModel(host)
+    compileModel(model,host)
   }
 #  thetas=initFixedEffects(model)
   thetas=getThetas(model)
@@ -316,6 +346,10 @@ require(shiny)
     numObservations = length(observationNames)
   }
   plotVariables=observationNames
+
+  modelVar = reactiveValues()
+
+  modelVar = model
 
 shinyApp(
 ui = fluidPage(
@@ -393,10 +427,14 @@ server = function(input, output,session) {
     ts=values
 
     plotVariables = c(input$Observation)
-    generateInitialEstimatesInputAscii("params.txt",ts,plotVariables,sweepStart,sweepLength,numSweepSteps)
-    generateGraph("params.txt","output.bin")
 
-    out=readModelData("output.bin")
+    workingDir = modelVar@modelInfo@workingDir
+print("-------------------")
+print(workingDir)
+    generateInitialEstimatesInputAscii(paste0(workingDir,"/params.txt"),ts,plotVariables,sweepStart,sweepLength,numSweepSteps)
+    generateGraph(workingDir,"params.txt","output.bin")
+
+    out=readModelData(paste0(workingDir,"/output.bin"))
     out
   } )
 
@@ -598,24 +636,24 @@ server = function(input, output,session) {
 
 #' getInitialEsimates
 #'
-#' Returns values from initial estimates shiny App.  
+#' Returns values from initial estimates shiny App.
 #' Returned value can be used to set initial estimates in RsNlme
 #'
 #'@examples
 #'      ...
 #'      estimatesUI(model,unique(input$ID),host)
 #'
-#'      estimates = getInitialEstimates()
+#'      estimates = getInitialEstimates(model)
 #'
 #'      initFixedEffects(model) = estimates
 #'
 #'@export
 #'
-getInitialEstimates <-function(){
+getInitialEstimates <-function(model){
 
 
   # Read latest parameters
-  lines= readLines("params.txt")
+  lines= readLines(paste0(model@modelInfo@workingDir,"/params.txt"))
   effects=list()
   numEffects=as.numeric(lines[[1]])
   for ( i in 1:numEffects ) {

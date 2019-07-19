@@ -17,7 +17,8 @@
 # ==========================================================================================================
 # Setup environment
 # ==========================================================================================================
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 # ==========================================================================================================
 # Load library
@@ -151,8 +152,7 @@ userDefinedExtraDefinitions(model) = c("addlcol(ADDL)"
 #          - Set up simulation parameters (numReplicates, seed, output tables)
 # ==========================================================================================================
 
-# Create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
+
 
 # Host setup: run locally 
 host = NlmeParallelHost(sharedDirectory = Sys.getenv("NLME_ROOT_DIRECTORY")
@@ -188,5 +188,5 @@ SimSetup = NlmeSimulationParams(numReplicates = 50
 # ==========================================================================================================
 #                                   Run the model 
 # ==========================================================================================================
-job = simmodel(host, NlmeFileNames, SimSetup, model)
+job = simmodel(host, SimSetup, model)
 

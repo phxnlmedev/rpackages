@@ -5,7 +5,7 @@
 \title{RunSimpleEstimation() : Method to execute an NLME simple estimation}
 \usage{
 RunSimpleEstimation(hostPlatform, dataset, params,
-  runInBackground = TRUE)
+  runInBackground = TRUE, workingDir = NULL)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
@@ -15,6 +15,8 @@ RunSimpleEstimation(hostPlatform, dataset, params,
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
+
+\item{workingDir}{Where to run the job}
 }
 \description{
 RunSimpleEstimation() : Method to execute an NLME simple estimation

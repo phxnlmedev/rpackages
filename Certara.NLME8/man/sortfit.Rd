@@ -4,17 +4,15 @@
 \alias{sortfit}
 \title{sortfit() : Method to execute an NLME simple estimation w sort keys}
 \usage{
-sortfit(hostPlatform, dataset, params = NULL, sortColumns,
-  scenarios = list(), model = NULL, runInBackground = TRUE)
+sortfit(hostPlatform, params = NULL, sortColumns, scenarios = list(),
+  model, runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
 
-\item{dataset}{Dataset and model information(NlmeDataset)}
-
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
-\item{model}{Optional PK/PD model}
+\item{model}{PK/PD model}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
 
@@ -26,8 +24,6 @@ sortfit(hostPlatform, dataset, params = NULL, sortColumns,
 sortfit() : Method to execute an NLME simple estimation w sort keys
 }
 \examples{
-
-dataset = NlmeDataset()
 
 param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
                              PARAMS_NUM_ITERATIONS=1000)
@@ -41,6 +37,6 @@ scenarios = c(scenario1,scenario2,scenario3,scenario4)
 
 sortColumns=NlmeSortColumns("group,sex")
 
-job = sortfit(defaultHost,dataset,params,sortColumns,scenarios,model)
+job = sortfit(defaultHost,params,sortColumns,scenarios,model)
 
 }

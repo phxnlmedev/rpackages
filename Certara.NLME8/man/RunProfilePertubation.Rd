@@ -5,7 +5,7 @@
 \title{RunProfilePertubation() : Method to execute an NLME profile pertubation}
 \usage{
 RunProfilePertubation(hostPlatform, dataset, params, profiles, sortColumns,
-  scenarios = list(), runInBackground = TRUE)
+  scenarios = list(), runInBackground = TRUE, workingDir = NULL)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
@@ -21,6 +21,8 @@ RunProfilePertubation(hostPlatform, dataset, params, profiles, sortColumns,
 \item{scenarios}{Optional list of scenarios to fit(NlmeScenario)}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
+
+\item{workingDir}{where to run the job}
 }
 \description{
 RunProfilePertubation() : Method to execute an NLME profile pertubation

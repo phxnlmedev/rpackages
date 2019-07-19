@@ -4,12 +4,14 @@
 \alias{getObsData}
 \title{getObsData : Updates column names for ID, TIME and DV so input can be passed on to vpc package}
 \usage{
-getObsData(input, mapFile = "cols1.txt")
+getObsData(input, mapFile = "cols1.txt", modelDir = "./")
 }
 \arguments{
 \item{input}{observation data frame}
 
 \item{mapFile}{column mapping file name}
+
+\item{modelDir}{directory where model was executed}
 }
 \description{
 getObsData : Updates column names for ID, TIME and DV so input can be passed on to vpc package

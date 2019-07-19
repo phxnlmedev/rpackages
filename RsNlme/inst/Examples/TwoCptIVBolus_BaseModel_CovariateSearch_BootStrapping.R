@@ -20,7 +20,8 @@
 ##############################################################################################################
 
 # Setup environment variables and loading necessary packages 
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 
 # ==========================================================================================================
@@ -89,21 +90,7 @@ modelColumnMapping(model) = c(id = "Subject", CObs = "Conc", A1 = "Amount")
 # Using the provided initial estimates shiny app, estimatesUI, to visually determine 
 # a set of reasonable initial values for fixed effects
 # ==========================================================================================================
-# create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
 
-# Create a new folder whose name is same as the model file name
-# and then write the model, input dataset, and mapping files into it
-writeDefaultFiles(model, NlmeFileNames)
-
-
-
-# host setup: run locally with MPI enabled
-host = NlmeParallelHost(sharedDirectory = Sys.getenv("NLME_ROOT_DIRECTORY")
-                        , parallelMethod = NlmeParallelMethod("LOCAL_MPI")
-                        , hostName = "MPI"
-                        , numCores = 4
-                        )
 
 # envoke the initial estimates GUI
 #
@@ -136,14 +123,14 @@ engineParams = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_ELS,
 #
 # Do the model fitting
 #
-job = fitmodel(host, NlmeFileNames, engineParams, model)
+job = fitmodel(host, engineParams, model)
 
 
 # ==========================================================================================================
 #                      Diagnostic plots
 # ==========================================================================================================
 # imports results of an NLME run into xpose database to create commonly used diagnostic plots
-xp=xposeNlme(dir="./",modelName = ModelName)
+xp=xposeNlme(dir=model@modelInfo@workingDir,modelName = ModelName)
 
 # list all available variables in an xpdb object
 list_vars(xp)
@@ -231,7 +218,6 @@ stepwiseSearchSetup = NlmeStepwiseParams(0.01, 0.001, "-2LL")
 
 # run the stepwise covariate search
 job = stepwiseSearch(host,
-                     NlmeFileNames,
                      engineParams,
                      covariateModel(covarModel),
                      stepwiseSearchSetup,
@@ -243,11 +229,11 @@ print(job)
 ## Load and view results from covariate search
 ##=====================================================================================================
 # load and view the reports for model fit diagnostic 
-overall = fread("Overall.csv")
+overall = fread(paste0(model@modelInfo@workingDir,"/Overall.csv"))
 View(overall)
 
 # load and view the model selected by the stepwise covariate search
-stepwiseLines = readLines("Stepwise.txt")
+stepwiseLines = readLines(paste0(model@modelInfo@workingDir,"/Stepwise.txt"))
 View(stepwiseLines)
 
 
@@ -287,7 +273,7 @@ bootSetup = NlmeBootstrapParams(numReplicates = 10,
 
 
 # run the boostrap for the model selected by the covariate search 
-job = bootstrap(host, NlmeFileNames, engineParams, bootSetup, bootModel)
+job = bootstrap(host, engineParams, bootSetup, bootModel)
 
 print(job)
 
@@ -296,16 +282,16 @@ print(job)
 ## Load and view results
 ##=====================================================================================================
 # load and view the estimation results for all boostrap runs
-dt_out = fread("out.csv")
+dt_out = fread(paste0(model@modelInfo@workingDir,"/out.csv"))
 
 # load and view the return code and LL for all the bootstrap runs
-dt_overall = fread("BootOverall.csv")
+dt_overall = fread(paste0(model@modelInfo@workingDir,"/BootOverall.csv"))
 
 # load and view reports for fixed effects over all bootstrap runs
-dt_theta = fread("BootTheta.csv")
+dt_theta = fread(paste0(model@modelInfo@workingDir,"/BootTheta.csv"))
 
 # load and view reports for Omega over all bootstrap runs
-dt_omega = fread("BootOmega.csv")
+dt_omega = fread(paste0(model@modelInfo@workingDir,"/BootOmega.csv"))
 
 
 

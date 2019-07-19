@@ -51,21 +51,22 @@ lookupMappedColumn <-function(columnNames,mapping,colName){
 #' @param stratifyColumns comma separted list of covariates to stratify on
 #' @param mapFile column mapping file name
 #' @param simFile Filename containing simulation data
+#' @param modelDir directory where model was executed
 #'
 #'
 #' @export
 #'
 #' @examples
 #'
-#' simdata = getSimData(input,stratifyColumns="sex")
+#' simdata = getSimData(input,stratifyColumns="sex",modelDir)
 #'
 #'
 #'
-getSimData <-function(input,stratifyColumns="",mapFile="cols1.txt",simFile="out.txt"){
+getSimData <-function(input,stratifyColumns="",mapFile="cols1.txt",simFile="out.txt",modelDir="./"){
 
  inames=colnames(input)
- simData = utils::read.csv(simFile)
- mapping=readLines(mapFile)
+ simData = utils::read.csv(paste0(modelDir,"/",simFile))
+ mapping=readLines(paste0(modelDir,"/",mapFile))
  snames= colnames(simData)
  #
  # Change IVAR to TIME and ID5 to ID
@@ -99,6 +100,7 @@ getSimData <-function(input,stratifyColumns="",mapFile="cols1.txt",simFile="out.
 #'
 #' @param input observation data frame
 #' @param mapFile column mapping file name
+#' @param modelDir directory where model was executed
 #'
 #'
 #' @export
@@ -109,11 +111,11 @@ getSimData <-function(input,stratifyColumns="",mapFile="cols1.txt",simFile="out.
 #'
 #'
 #'
-getObsData <-function(input,mapFile="cols1.txt"){
+getObsData <-function(input,mapFile="cols1.txt",modelDir="./"){
 
   inames=colnames(input)
 
-  mapping=readLines(mapFile)
+  mapping=readLines(paste0(modelDir,"/",mapFile))
   indx =lookupMappedColumn(inames,mapping,"time")
   inames[[indx]] = "TIME"
   indx =lookupMappedColumn(inames,mapping,"CObs")
@@ -141,6 +143,7 @@ getObsData <-function(input,mapFile="cols1.txt"){
 #'
 #' @param input observation data frame
 #' @param covarNames comma separated covariate names
+#' @param workingDir run directory
 #' @param mapFile column mapping file name
 #'
 #'
@@ -152,12 +155,12 @@ getObsData <-function(input,mapFile="cols1.txt"){
 #'
 #'
 #'
-mapCovariate <- function(input,covarNames,mapFile="cols1.txt"){
+mapCovariate <- function(input,covarNames,workingDir,mapFile="cols1.txt"){
 
   ret=c()
   inames=colnames(input)
 
-  mapping=readLines(mapFile)
+  mapping=readLines(paste0(workingDir,"/",mapFile))
   cTokens = unlist(strsplit(covarNames,","))
   if ( length(cTokens) > 0 ){
     for ( cn in cTokens ) {
@@ -241,7 +244,7 @@ xposeNlme <-function(dir="",
   colnames(input)=names
 
 
-    mapping=readLines(mapFile)
+    mapping=readLines(paste(dir,mapFile,sep="/"))
   indx=grep("id",mapping)
   line=mapping[[indx[[1]]]]
 

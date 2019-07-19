@@ -292,8 +292,14 @@ setMethod("initialize","NlmeParallelHost",
         if ( installationDirectory == "" )
             installationDirectory = paste(sharedDirectory,"InstallDirNLME",
             sep="/")
-        installationDirectory=gsub("\\","/",shortPathName(installationDirectory),fixed=TRUE)
-        sharedDirectory=gsub("\\","/",shortPathName(sharedDirectory),fixed=TRUE)
+        if ( Sys.info()["sysname"] == "Windows" )
+            installationDirectory=gsub("\\","/",shortPathName(installationDirectory),fixed=TRUE)
+        else
+            installationDirectory=gsub("\\","/",installationDirectory,fixed=TRUE)
+        if ( Sys.info()["sysname"] == "Windows" )
+            sharedDirectory=gsub("\\","/",shortPathName(sharedDirectory),fixed=TRUE)
+        else
+            sharedDirectory=gsub("\\","/",sharedDirectory,fixed=TRUE)
         if ( machineName == "" )
             machineName=Sys.info()[["nodename"]]
         if ( hostType == "" )

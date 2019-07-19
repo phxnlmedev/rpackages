@@ -479,8 +479,9 @@ writeParamsMapping <-function(model,dataset){
         }
     }
 
-    filename=dataset@estimatesDefFile
-    dataFilename=dataset@estimatesDataFile
+    workingDir = model@modelInfo@workingDir
+    filename=paste0(workingDir,"/",dataset@estimatesDefFile)
+    dataFilename=paste0(workingDir,"/",dataset@estimatesDataFile)
     appendFlag=FALSE
     for (  l in  lines ) {
         cat(l,file=filename , sep ="\n" ,append=appendFlag)
@@ -530,8 +531,9 @@ writeRandParamsMapping <-function(model,dataset){
         }
     }
 
-    filename=dataset@ranEffectDefFile
-    dataFilename=dataset@ranEffectDataFile
+    workingDir = model@modelInfo@workingDir
+    filename=paste0(workingDir,"/",dataset@ranEffectDefFile)
+    dataFilename=paste0(workingDir,"/",dataset@ranEffectDataFile)
     appendFlag=FALSE
     for (  l in  lines ) {
         cat(l,file=filename , sep ="\n" ,append=appendFlag)
@@ -562,6 +564,7 @@ assign("writeRandParamsMapping",writeRandParamsMapping,envir=.GlobalEnv)
 #'
 writeDoseMapping <-function(model,dataset){
 
+
     lines=c()
     mapping = attr(model,"doseMapping")
     colMap = attr(mapping,"mapping")
@@ -569,8 +572,9 @@ writeDoseMapping <-function(model,dataset){
     if ( model@isPopulation == FALSE )
         cbind(zzzDummyId = 0, data)
 
-    filename=dataset@doseDefFile
-    dataFilename=dataset@doseDataFile
+    workingDir = model@modelInfo@workingDir
+    filename=paste0(workingDir,"/",dataset@doseDefFile)
+    dataFilename=paste0(workingDir,"/",dataset@doseDataFile)
 
     if ( model@isPopulation == FALSE )
         lines = c(lines,paste0("id(\"zzzDummyId\")"))
@@ -617,6 +621,9 @@ assign("writeDoseMapping",writeDoseMapping,envir=.GlobalEnv)
 #' @export writeColumnMapping
 #'
 writeColumnMapping <-function(model,filename){
+
+    workingDir = model@modelInfo@workingDir
+    fullPath = paste0(workingDir,"/",filename)
 
     lines=c()
     mapping = attr(model,"columnMapping")
@@ -725,7 +732,7 @@ writeColumnMapping <-function(model,filename){
 
     append=FALSE
     for ( l in lines ) {
-        cat(l,file=filename,sep="\n",append=append)
+        cat(l,file=fullPath,sep="\n",append=append)
         append=TRUE
     }
     return(lines)
@@ -756,12 +763,13 @@ writeInputData <-function(model,datafileName){
     if ( !dir.exists(workingDir ) ) {
         dir.create(workingDir)
     }
-    setwd(workingDir)
+###    setwd(workingDir)
 
+    fullPath = paste0(workingDir,"/",datafileName)
     colnames=colnames(inputData)
     header=paste0("##",paste(colnames,collapse=","))
-    cat(header,file=datafileName,append=FALSE,sep="\n")
-    write.table(inputData,datafileName,row.names=FALSE, col.names=FALSE,sep=",",
+    cat(header,file=fullPath,append=FALSE,sep="\n")
+    write.table(inputData,fullPath,row.names=FALSE, col.names=FALSE,sep=",",
             quote=FALSE,append=TRUE)
 }
 
@@ -783,6 +791,8 @@ assign("writeInputData",writeInputData,envir=.GlobalEnv)
 #'
 addTablesToColumnMapping <-function(model,simParams,filename){
 
+    workingDir = model@modelInfo@workingDir
+    filename=paste0(workingDir,"/",filename)
     lines=c()
     tables = attr(simParams,"simulationTables")
     on = observationNames(model)

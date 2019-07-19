@@ -5,7 +5,7 @@
 \title{getSimData : Opens and returns simulation data from an NLME VPC run}
 \usage{
 getSimData(input, stratifyColumns = "", mapFile = "cols1.txt",
-  simFile = "out.txt")
+  simFile = "out.txt", modelDir = "./")
 }
 \arguments{
 \item{input}{observation data frame}
@@ -15,13 +15,15 @@ getSimData(input, stratifyColumns = "", mapFile = "cols1.txt",
 \item{mapFile}{column mapping file name}
 
 \item{simFile}{Filename containing simulation data}
+
+\item{modelDir}{directory where model was executed}
 }
 \description{
 getSimData : Opens and returns simulation data from an NLME VPC run
 }
 \examples{
 
-simdata = getSimData(input,stratifyColumns="sex")
+simdata = getSimData(input,stratifyColumns="sex",modelDir)
 
 
 

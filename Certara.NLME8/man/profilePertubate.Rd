@@ -4,20 +4,18 @@
 \alias{profilePertubate}
 \title{profilePertubate() : Method to execute an NLME profile pertubation}
 \usage{
-profilePertubate(hostPlatform, dataset, params = NULL, profiles,
-  model = NULL, sortColumns = NlmeSortColumns(""),
-  scenarios = list(), runInBackground = TRUE)
+profilePertubate(hostPlatform, params = NULL, profiles, model = NULL,
+  sortColumns = NlmeSortColumns(""), scenarios = list(),
+  runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
-
-\item{dataset}{Dataset and model information(NlmeDataset)}
 
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
 \item{profiles}{profiles to pertubate(NlmeProfileParameters)}
 
-\item{model}{Optional PK/PD model}
+\item{model}{PK/PD model}
 
 \item{sortColumns}{Optional list of columns to sort and fit(NlmeSortColumns)}
 
@@ -30,7 +28,6 @@ profilePertubate() : Method to execute an NLME profile pertubation
 }
 \examples{
 
-dataset = NlmeDataset()
 
 param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
                              PARAMS_NUM_ITERATIONS=1000)
@@ -39,6 +36,6 @@ profile1 = NlmeProfileVar("tvV",9.548,"-2,-1,0,1,2")
 profile2 = NlmeProfileVar("tvCl",0.919,"-0.5,0,1.5")
 profiles= NlmeProfileParameters("USE_DELTA",c(profile1,profile2))
 
-job = profilePertubate(defaultHost,dataset,params,profiles,model)
+job = profilePertubate(defaultHost,params,profiles,model)
 
 }

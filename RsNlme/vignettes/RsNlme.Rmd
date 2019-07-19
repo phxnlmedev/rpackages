@@ -43,7 +43,7 @@ If the following R libraries are already installed, skip this step. Otherwise, r
 - tidyr
 - shiny
 - shinyjs
-- Xpose 
+- xpose 
 
   If you are going to run the test example provided in the last step of this document, you will also need to install the following libraries:
 
@@ -67,7 +67,7 @@ Sys.setenv(\"INSTALLDIR\"=\"C:/Program Files/R/R-3.5.1/library/Certara.NLME8/Ins
 ### NLME engine license obtained from support@certara.com
 Sys.setenv(\"PhoenixLicenseFile\"=\"D:\\\\SDCard\\\\NlmeInstall_04_30_18\\\\lservrc\")
 
-### NLME engine work directory
+### NLME engine temporary work directory
 Sys.setenv(\"NLME_ROOT_DIRECTORY\"=\"D:/SDCard/NlmeInstall_04_30_18\")
 
 ## Examples and Datasets

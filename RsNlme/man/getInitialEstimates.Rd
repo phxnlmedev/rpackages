@@ -4,17 +4,17 @@
 \alias{getInitialEstimates}
 \title{getInitialEsimates}
 \usage{
-getInitialEstimates()
+getInitialEstimates(model)
 }
 \description{
-Returns values from initial estimates shiny App.  
+Returns values from initial estimates shiny App.
 Returned value can be used to set initial estimates in RsNlme
 }
 \examples{
      ...
      estimatesUI(model,unique(input$ID),host)
 
-     estimates = getInitialEstimates()
+     estimates = getInitialEstimates(model)
 
      initFixedEffects(model) = estimates
 

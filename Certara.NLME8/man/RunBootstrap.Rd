@@ -5,7 +5,7 @@
 \title{RunBootstrap() : Method to execute an NLME Bootstrap}
 \usage{
 RunBootstrap(hostPlatform, dataset, params, bootParams,
-  runInBackground = TRUE)
+  runInBackground = TRUE, workingDir = NULL)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
@@ -17,6 +17,8 @@ RunBootstrap(hostPlatform, dataset, params, bootParams,
 \item{bootParams}{Bootstrap parameters(NlmeBootstrapParams)}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
+
+\item{workingDir}{where to run the job}
 }
 \description{
 RunBootstrap() : Method to execute an NLME Bootstrap

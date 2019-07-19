@@ -14,11 +14,13 @@
 #' @param ranEffectDataFile   random effects data file
 #' @param outputFilename      Name of output file
 #' @param phoenixSourceDir    Directory containing phoenix generated files
+#' @param workingDir          Directory containing datafiles(default cwd)
 #' @export NlmeDataset
 #' @examples 
-#' dataset = NlmeDataset()
+#' dataset = NlmeDataset(workingDir)
 #'
 NlmeDataset = setClass("NlmeDataset",representation(
+                                      workingDir="character",
                                       dataFile="character",
                                       colDefFile="character",
                                       modelFile="character",
@@ -30,12 +32,14 @@ NlmeDataset = setClass("NlmeDataset",representation(
                                       ranEffectDataFile="character",
                                       outputFilename="character",
                                       phoenixSourceDir="character",
+                                      model="ANY",
                                       engineParamsFile="character"))
 
 assign("NlmeDataset",NlmeDataset,env=.GlobalEnv)
 
 setMethod("initialize","NlmeDataset",
     function(.Object,
+              workingDir,
               dataFile="data1.txt",
               colDefFile="cols1.txt",
               modelFile="test.mdl",
@@ -47,6 +51,7 @@ setMethod("initialize","NlmeDataset",
               ranEffectDataFile="",
               outputFilename="out.txt",
               phoenixSourceDir="",
+              model=NULL,
               engineParamsFile="nlmeargs.txt"){
         .Object@dataFile=dataFile
         .Object@colDefFile=colDefFile
@@ -59,6 +64,13 @@ setMethod("initialize","NlmeDataset",
         .Object@ranEffectDataFile=ranEffectDataFile
         .Object@outputFilename=outputFilename
         .Object@phoenixSourceDir=phoenixSourceDir
+        if ( workingDir == "" ) {
+            if ( ! is.null(model) ) 
+                workingDir = model@modelInfo@workingDir
+            else
+                workingDir = getwd()
+        }
+        .Object@workingDir=workingDir
         .Object@engineParamsFile=engineParamsFile
         if ( phoenixSourceDir != "" ) {
             if ( dir.exists(phoenixSourceDir) ) {
@@ -120,7 +132,11 @@ DatasetGetObserveParams <-function(dataset)
     ret=c()
     observeKeywords=c("multi\\(","observe\\(","LL\\(","count\\(",
                       "ordinal\\(", "event\\(")
-    lines = readLines(attr(dataset,"modelFile"))
+    if ( dataset@workingDir != "" ) 
+        file = paste0(dataset@workingDir,"/",dataset@modelFile)
+    else
+        file = dataset@modelFile
+    lines = readLines(file)
     for ( l in lines ) {
         exist = any(sapply(observeKeywords, grepl, l))
         if ( exist == TRUE ) {
@@ -137,7 +153,11 @@ assign("DatasetGetObserveParams",DatasetGetObserveParams,env=.GlobalEnv)
 columnNames <-function(dataset)
 {
     ret=c()
-    lines=readLines(attr(dataset,"dataFile")) 
+    if ( dataset@workingDir != "" ) 
+        file = paste0(dataset@workingDir,"/",dataset@dataFile)
+    else
+        file = dataset@dataFile
+    lines=readLines(file)
     header=gsub("^#*","",lines[1])
     names=unlist(strsplit(header, split=","))
     for ( i in 1:length(names) ) {

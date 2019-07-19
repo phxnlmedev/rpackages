@@ -5,7 +5,7 @@
 \title{RunStepwiseSearch() : Method to execute an NLME stepwise covariate search}
 \usage{
 RunStepwiseSearch(hostPlatform, dataset, params, covariateModel,
-  stepwiseParams, runInBackground = TRUE)
+  stepwiseParams, runInBackground = TRUE, workingDir)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
@@ -17,6 +17,8 @@ RunStepwiseSearch(hostPlatform, dataset, params, covariateModel,
 \item{covariateModel}{Covariate Effects Model(NlmeCovariateEffectModel)}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
+
+\item{workingDir}{where to run the search}
 
 \item{stepwiseParam}{stepwise parameters(NlmeStepwiseParams)}
 }

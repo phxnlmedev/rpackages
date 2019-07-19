@@ -5,7 +5,7 @@
 \title{RunVpcSimulation() : Method to execute an NLME VPC simulation}
 \usage{
 RunVpcSimulation(hostPlatform, dataset, params, vpcParams = NULL,
-  simParams = NULL, runInBackground = TRUE)
+  simParams = NULL, runInBackground = TRUE, workingDir = NULL)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
@@ -17,6 +17,8 @@ RunVpcSimulation(hostPlatform, dataset, params, vpcParams = NULL,
 \item{vpcParams}{VPC parameters(NlmeVpcParams)}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
+
+\item{workingDir}{where to run the job}
 }
 \description{
 RunVpcSimulation() : Method to execute an NLME VPC simulation

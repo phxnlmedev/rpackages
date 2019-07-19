@@ -546,6 +546,9 @@ setMethod("setInPortName",
             .Object
           })
 
+#'
+#' @export
+#'
 setMethod("genObserveError",
           signature="ObservationCategorical",
           definition = function(.Object){

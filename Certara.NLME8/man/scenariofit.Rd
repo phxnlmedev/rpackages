@@ -4,13 +4,11 @@
 \alias{scenariofit}
 \title{scenariofit() : Method to execute an NLME simple estimation on a set of scenario}
 \usage{
-scenariofit(hostPlatform, dataset, params, scenarios, model = NULL,
+scenariofit(hostPlatform, params, scenarios, model = NULL,
   runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
-
-\item{dataset}{Dataset and model information(NlmeDataset)}
 
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
@@ -25,7 +23,6 @@ scenariofit() : Method to execute an NLME simple estimation on a set of scenario
 }
 \examples{
 
-dataset = NlmeDataset()
 
 param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
                              PARAMS_NUM_ITERATIONS=1000)
@@ -38,6 +35,6 @@ scenario3=NlmeScenario("SC0002","2")
 scenario4=NlmeScenario("SC0002","1,2")
 scenarios = c(scenario1,scenario2,scenario3,scenario4)
 
-job = scenariofit(defaultHost,dataset,params,scenarios,model)
+job = scenariofit(defaultHost,params,scenarios,model)
 
 }

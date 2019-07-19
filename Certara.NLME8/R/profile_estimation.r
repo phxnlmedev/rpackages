@@ -91,10 +91,9 @@ getProfilesString <-function(profiles)
 #' profilePertubate() : Method to execute an NLME profile pertubation
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  profiles profiles to pertubate(NlmeProfileParameters)
-#' @param  model Optional PK/PD model
+#' @param  model PK/PD model
 #' @param  sortColumns Optional list of columns to sort and fit(NlmeSortColumns)
 #' @param  scenarios Optional list of scenarios to fit(NlmeScenario)
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
@@ -103,7 +102,6 @@ getProfilesString <-function(profiles)
 #' 
 #' @examples 
 #' 
-#' dataset = NlmeDataset()
 #' 
 #' param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
 #'                              PARAMS_NUM_ITERATIONS=1000)
@@ -112,13 +110,12 @@ getProfilesString <-function(profiles)
 #' profile2 = NlmeProfileVar("tvCl",0.919,"-0.5,0,1.5")
 #' profiles= NlmeProfileParameters("USE_DELTA",c(profile1,profile2))
 #' 
-#' job = profilePertubate(defaultHost,dataset,params,profiles,model)
+#' job = profilePertubate(defaultHost,params,profiles,model)
 #'
 
 
 profilePertubate<-function(
                               hostPlatform,
-                              dataset,
                               params= NULL,
                               profiles,
                               model = NULL,
@@ -126,9 +123,13 @@ profilePertubate<-function(
                               scenarios=list(),
                               runInBackground=TRUE)
 {
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset)
-    return(RunProfilePertubation(hostPlatform,dataset,params,profiles,sortColumns,scenarios,runInBackground))
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset)
+        workingDir = model@modelInfo@workingDir
+    }
+    else 
+        workingDir = getwd()
+    return(RunProfilePertubation(hostPlatform,model@dataset,params,profiles,sortColumns,scenarios,runInBackground,workingDir=workingDir))
 }
 
 
@@ -143,6 +144,7 @@ profilePertubate<-function(
 #' @param  sortColumns Optional list of columns to sort and fit(NlmeSortColumns)
 #' @param  scenarios Optional list of scenarios to fit(NlmeScenario)
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
+#' @param  workingDir where to run the job
 #' 
 #' @export RunProfilePertubation  
 #' 
@@ -167,15 +169,22 @@ RunProfilePertubation<-function(
                               profiles,
                               sortColumns,
                               scenarios=list(),
-                              runInBackground=TRUE)
+                              runInBackground=TRUE,
+                              workingDir=NULL)
 {
+
     workFlow="WorkFlow"
     cleanupFromPreviousRun()
     if ( attr(hostPlatform,"hostType")== "Windows" )
         runInBackground=FALSE
-    argsFile=GenerateControlfile(dataset, params,workFlow,scenarios=scenarios)
+    if (  is.null(workingDir ))
+        cwd = getwd()
+    else
+        cwd = workingDir
 
-    cwd = getwd()
+    argsFile=GenerateControlfile(dataset, params,workFlow,scenarios=scenarios,
+                                 workingDir = cwd)
+
 
 
     argsList=list()

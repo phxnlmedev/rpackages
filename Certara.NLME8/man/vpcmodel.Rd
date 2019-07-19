@@ -4,17 +4,14 @@
 \alias{vpcmodel}
 \title{vpcmodel}
 \usage{
-vpcmodel(hostPlatform, dataset, vpcParams = NULL, model = NULL,
-  runInBackground = TRUE)
+vpcmodel(hostPlatform, vpcParams = NULL, model, runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
 
-\item{dataset}{Dataset and model information(NlmeDataset)}
-
 \item{vpcParams}{VPC parameters(NlmeVpcParam)}
 
-\item{model}{optional PK/PD model}
+\item{model}{PK/PD model}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
 }
@@ -23,7 +20,7 @@ Method to execute an NLME visual predictive check
 }
 \examples{
 
-obsVars = GetObservationVariables(dataset)
+obsVars = GetObservationVariables(model@dataset)
 
 observationParameters(obsVars[[1]])=c(xaxis=VPC_XAXIS_T,
                                       binningMethod=VPC_BIN_NONE,
@@ -34,6 +31,6 @@ vpcParams = NlmeVpcParams(numReplicates=2,
                        observationVars=obsVars)
 
 
-job = vpcmodel(defaultHost,dataset,vpcParams,model)
+job = vpcmodel(defaultHost,vpcParams,model)
 
 }

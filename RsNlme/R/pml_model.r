@@ -782,7 +782,7 @@ setMethod("initialize","NlmePmlModel",
               hasEffectsCompartment=FALSE,
               errorModel=NlmeErrorModel() ,
               modelInfo=NlmePmlModelInfo(),
-              dataset = NlmeDataset(),
+              dataset = NULL,
               engine = NlmeEngineExtraParams(),
               host = NlmeParallelHost(),
               randomValues= NULL,
@@ -811,6 +811,8 @@ setMethod("initialize","NlmePmlModel",
         .Object@isObjectModel=FALSE
         .Object@userDefinedExtraDefs=list()
         .Object@secondaryParameters=list()
+        if ( is.null(dataset) )
+            dataset=NlmeDataset(.Object@modelInfo@workingDir)
         .Object@dataset = dataset
         .Object@engine = engine
         .Object@host = host
@@ -852,21 +854,22 @@ print.NlmePmlModel <-function(x, ...)
             print(paste("Duration          : ",attr(attr(x,"pkModelAttrs"),"duration")))
         print(paste("Sequential        : ",attr(attr(x,"pkModelAttrs"),"isSequential")))
         print("---------------------------------------")
-    }
+    } 
     if (length(grep( "EMAX", modelTypeName  ))  ){
         print(paste("Check Baseline    : ",attr(attr(x,"emaxModelAttrs"),"checkBaseline")))
         print(paste("Check Inhibitory  : ",attr(attr(x,"emaxModelAttrs"),"checkInhibitory")))
         print(paste("Check Sigmoid     : ",attr(attr(x,"emaxModelAttrs"),"checkSigmoid")))
         print("---------------------------------------")
-    }
+    } 
     if (length(grep( "LINEAR", modelTypeName  ))  ){
         name=ModelLinearNames[attr(x,"linearModelType")]
         print(paste("Linear Model Type  : ",name))
         print("---------------------------------------")
     }
-    } else {
-      print(x@xects)
     }
+    else
+        print(ModelTypeName)
+
     statements=attr(x,"statements")
     structuralParams=attr(x,"structuralParams")
     dosePoints=attr(x,"dosePoints")
@@ -5260,8 +5263,9 @@ setMethod(f="writeModelStatements",
     definition=function(.Object,filename){
         statements=attr(.Object,"statements")
         append=FALSE
+        workingDir = .Object@modelInfo@workingDir
         for ( s in statements ) {
-            cat(s,file=filename,sep="\n",append=append)
+            cat(s,file=paste0(workingDir,"/",filename),sep="\n",append=append)
             append=TRUE
         }
     })
@@ -5433,8 +5437,8 @@ setMethod(f="initFixedEffects",
     effectsParams=attr(.Object,"effectsParams")
     estimates=c()
     names=c()
-    if ( model@isTextual )  {
-        statements = model@statements
+    if ( .Object@isTextual )  {
+        statements = .Object@statements
         estimates = getFixedEffects(statements)
     } else {
       if ( length(structuralParams ) > 0 )
@@ -5667,7 +5671,7 @@ defaultDataset <-function(model,inputFile){
 
 
 library("Certara.NLME8")
-    dataset=NlmeDataset()
+    dataset=NlmeDataset(model@modelInfo@workingDir)
     dataset
 }
 
@@ -5734,33 +5738,32 @@ copyModel <-function(model,modelName="",workingDir=""){
 
     oldWorkingDir = model@modelInfo@workingDir
     oldModelName = model@modelInfo@modelName
-    if ( file.exists("dmp.txt") ) {
-        source("dmp.txt")
-    }
+#    if ( file.exists("dmp.txt") ) {
+#        source("dmp.txt")
+#    }
     if ( workingDir == "" ) {
         setwd(dirname(oldWorkingDir))
     }
     modelInfo = NlmePmlModelInfo(modelName,workingDir)
     modelName=modelInfo@modelName
     workingDir=modelInfo@workingDir
+    model@dataset@workingDir = workingDir
+
     if ( !dir.exists(workingDir ) ) {
         dir.create(workingDir)
     }
 #    files = list.files(path=oldWorkingDir,full.names=FALSE)
-    files = c("test.mdl","cols1.txt","data1.txt","cols2.txt","data2.txt","cols3.txt","data3.txt","cols4.txt","data4.txt")
+    files = c("test.mdl","cols1.txt","data1.txt","cols2.txt","data2.txt",
+             "cols3.txt","data3.txt","cols4.txt","data4.txt")
     for ( f in files ) {
         file.copy(paste(oldWorkingDir,f,sep="/"),
                   paste(workingDir,f,sep="/"),overwrite=TRUE)
     }
-    setwd(workingDir)
-    if ( exists("dmp.txt" ) ) {
-#        model=generatePMLModel(model)
+    if ( exists(paste0(workingDir,"/dmp.txt" )) ) {
         model=generatePML(model)
     }
     newModel = model
     newModel@modelInfo=modelInfo
-#    initFixedEffects(newModel)=dmp.txt$coefficients.fixed
-#    newModel=generatePMLModel(newModel)
     newModel
 }
 
@@ -5842,6 +5845,7 @@ assign("refreshModel",refreshModel,envir=.GlobalEnv)
 #'
 saveModel <-function(model,dataset=NULL,engine=NULL,host=NULL){
 
+  cwd=getwd()
   if ( ! is.null(dataset ) )
     model@dataset = dataset
   if ( ! is.null(engine ))
@@ -5850,6 +5854,7 @@ saveModel <-function(model,dataset=NULL,engine=NULL,host=NULL){
     model@host = host
   setwd(model@modelInfo@workingDir)
   saveRDS(model,"model.RDS")
+  setwd(cwd)
 
 }
 
@@ -5868,7 +5873,7 @@ assign("saveModel",saveModel,envir=.GlobalEnv)
 #'
 loadModel <-function(directory){
   model=readRDS(paste0(directory,"/","model.RDS"))
-  setwd(model@modelInfo@workingDir)
+#  setwd(model@modelInfo@workingDir)
   model
 
 }
@@ -7781,7 +7786,8 @@ acceptAllEffects <-function(model){
 
 #  if ( model@isTextual )
 #      stop("Textual models should be editted manually")
-  source("dmp.txt")
+
+  source(paste0(model@modelInfo@workingDir,"/dmp.txt"))
 
   fixedEffects = dmp.txt$coefficients$fixed
 

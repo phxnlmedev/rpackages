@@ -4,17 +4,14 @@
 \alias{fitmodel}
 \title{fitmodel() : Method to execute an NLME simple estimation}
 \usage{
-fitmodel(hostPlatform, dataset, params = NULL, model = NULL,
-  runInBackground = TRUE)
+fitmodel(hostPlatform, params = NULL, model, runInBackground = TRUE)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
 
-\item{dataset}{Dataset and model information(NlmeDataset)}
-
 \item{params}{Engine parameters(NlmeEngineExtraParams)}
 
-\item{model}{Optional PK/PD model}
+\item{model}{PK/PD model}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
 }
@@ -28,8 +25,6 @@ input=read.csv("PKPD_Data.csv")
 model = pkmodel(numComp=1,
                absorption = Extravascular,
                modelName="PkModel")
-
-dataset = defaultDataset(model,input)
 
 initColMapping(model)= input
 
@@ -45,6 +40,6 @@ host = NlmeParallelHost(sharedDirectory=Sys.getenv("NLME_ROOT_DIRECTORY"),
 params = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
                              PARAMS_NUM_ITERATIONS=1000)
 
-job = fitmodel(host,dataset,params,model)
+job = fitmodel(host,params,model)
 
 }

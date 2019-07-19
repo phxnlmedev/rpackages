@@ -8,7 +8,8 @@
 ##############################################################################################################
 
 # Setup environment variables and loading necessary packages 
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 ##############################################################################################################
 
@@ -95,8 +96,7 @@ modelColumnMapping(model) = c(A1 = "Dose")
 ###################                    Model Fitting                                      ################### 
 
 ##############################################################################################################
-# create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
+
 
 
 # host setup: run locally with MPI enabled
@@ -114,7 +114,7 @@ engineParams = NlmeEngineExtraParams(PARAMS_METHOD = METHOD_FOCE_ELS
 
 
 # run the model 
-job = fitmodel(host, NlmeFileNames, engineParams, model)
+job = fitmodel(host, engineParams, model)
 
 ##############################################################################################################
 

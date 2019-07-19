@@ -5,7 +5,7 @@
 \title{RunShotgunSearch : Method to execute an NLME shotgun covariate search}
 \usage{
 RunShotgunSearch(hostPlatform, dataset, params, covariateModel,
-  runInBackground = TRUE)
+  runInBackground = TRUE, workingDir = NULL)
 }
 \arguments{
 \item{hostPlatform}{How to execute the run(NlmeParallelHost)}
@@ -17,6 +17,8 @@ RunShotgunSearch(hostPlatform, dataset, params, covariateModel,
 \item{covariateModel}{Covariate Effects Model(NlmeCovariateEffectModel)}
 
 \item{runInBackground}{TRUE will run in background and return prompt(Bool)}
+
+\item{workingDir}{where to run the job}
 }
 \description{
 RunShotgunSearch : Method to execute an NLME shotgun covariate search

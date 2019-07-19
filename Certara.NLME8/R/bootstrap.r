@@ -39,23 +39,20 @@ setMethod("initialize","NlmeBootstrapParams",
 #' bootstrap() : Method to execute an NLME Bootstrap 
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  bootParams Bootstrap parameters(NlmeBootstrapParams)
-#' @param  model Optional PK/PD model
+#' @param  model PK/PD model
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
 #' 
 #' @export 
 #' 
 #' @examples 
 #' 
-#' dataset = NlmeDataset()
-#' 
 #' params = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
 #'                              PARAMS_NUM_ITERATIONS=1000)
 #' bootParams = NlmeBootstrapParams(numReplicates=5, randomNumSeed=1234)
 #' 
-#' job = bootstrap(defaultHost,dataset,params,bootParams,model)
+#' job = bootstrap(defaultHost,params,bootParams,model)
 #'
 #' while (!(NlmeJobStatus(job) == "Finished" || NlmeJobStatus(job) == "Failed") )
 #' {
@@ -68,21 +65,25 @@ setMethod("initialize","NlmeBootstrapParams",
 
 bootstrap <-function(
                         hostPlatform,
-                        dataset,
                         params,
                         bootParams,
-                        model = NULL,
+                        model ,
                         runInBackground=TRUE)
 {
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset)
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset)
+        workingDir = model@modelInfo@workingDir
+    } else
+        workingDir = getwd()
+
 
     return(RunBootstrap(
                         hostPlatform,
-                        dataset,
+                        model@dataset,
                         params,
                         bootParams,
-                        runInBackground))
+                        runInBackground,
+                        workingDir=workingDir))
 }
 
 #'
@@ -93,6 +94,7 @@ bootstrap <-function(
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  bootParams Bootstrap parameters(NlmeBootstrapParams)
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
+#' @param  workingDir where to run the job
 #' 
 #' @export RunBootstrap  
 #' 
@@ -122,16 +124,22 @@ RunBootstrap <-function(
                         dataset,
                         params,
                         bootParams,
-                        runInBackground=TRUE)
+                        runInBackground=TRUE,
+                        workingDir = NULL )
 {
 
     workFlow="WorkFlow"
     #cleanupFromPreviousRun()
+    if ( is.null(workingDir) )
+        cwd = getwd()
+    else
+        cwd = workingDir
     if ( attr(hostPlatform,"hostType")== "Windows" )
         runInBackground=FALSE
     argsFile=GenerateControlfile(dataset, params,workFlow,
-                                 bootStratify=attr(bootParams,"stratifyColumns"))
-    cwd = getwd()
+                               bootStratify=attr(bootParams,"stratifyColumns"),
+                               workingDir=cwd)
+#    cwd = getwd()
  
     argsList=list()
     argsList=c(argsList,attr(attr(hostPlatform,"parallelMethod"),"method"))

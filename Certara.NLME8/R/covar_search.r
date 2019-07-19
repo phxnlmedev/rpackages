@@ -129,22 +129,19 @@ ReadNlmeCovariateEffectModel <-function(covariateEffectFile)
 #' Method to execute an NLME shotgun covariate search
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  covariateModel Covariate Effects Model(NlmeCovariateEffectModel)
 #' @param  shotgunParam shotgun parameters(NlmeStepwiseParams)
-#' @param  dataset Optional PK/PD model
+#' @param  model PK/PD model
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
 #'
 #' @examples
 #'
-#' dataset = NlmeDataset()
 #'
 #' param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
 #'                              PARAMS_NUM_ITERATIONS=1000)
 #'
 #' job = shotgunSearch(defaultHost,
-#'                     dataset,
 #'                     params,
 #'                     covariateModel(model),
 #'                     model)
@@ -152,20 +149,24 @@ ReadNlmeCovariateEffectModel <-function(covariateEffectFile)
 #' @export
 #'
 shotgunSearch <-function( hostPlatform,
-                            dataset,
                             params= NULL ,
                             covariateModel,
-                            model = NULL,
+                            model ,
                             runInBackground=TRUE)
 {
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset)
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset)
+        workingDir = model@modelInfo@workingDir
+    }
+    else
+        workingDir = getwd()
 
     return(RunShotgunSearch(hostPlatform,
-                            dataset,
+                            model@dataset,
                             params,
                             covariateModel,
-                            runInBackground))
+                            runInBackground,
+                            workingDir=workingDir))
 }
 
 
@@ -177,6 +178,7 @@ shotgunSearch <-function( hostPlatform,
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  covariateModel Covariate Effects Model(NlmeCovariateEffectModel)
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
+#' @param  workingDir where to run the job
 #'
 #' @examples
 #'
@@ -195,15 +197,23 @@ RunShotgunSearch <-function(
                             dataset,
                             params,
                             covariateModel,
-                            runInBackground=TRUE)
+                            runInBackground=TRUE,
+                            workingDir=NULL)
 {
 
     workFlow="WorkFlow"
     cleanupFromPreviousRun()
+    if ( is.null(workingDir) )
+        cwd = getwd()
+    else
+        cwd = workingDir
+
+
+
     if ( attr(hostPlatform,"hostType")== "Windows" )
         runInBackground=FALSE
-    argsFile=GenerateControlfile(dataset, params,workFlow)
-    stuff=parseControlFile(argsFile)
+    argsFile=GenerateControlfile(dataset, params,workFlow,workingDir=cwd)
+    stuff=parseControlFile(cwd,argsFile)
     modelFile=stuff[1]
     extraArgsFile=stuff[4]
     filesToCopy=stuff[6]
@@ -221,8 +231,9 @@ RunShotgunSearch <-function(
                                 attr(covariateModel,"numCovariates"),
                                 gsub(","," ",
                                      attr(covariateModel,"covariateList"),
-                                     fixed=TRUE))
-    cwd = getwd()
+                                     fixed=TRUE),
+                                workingDir=cwd)
+#    cwd = getwd()
 
     argList=list()
     argList=c(argList,"COVAR_SEARCH")
@@ -243,7 +254,7 @@ RunShotgunSearch <-function(
                remoteDir=cwd,
                host=hostPlatform,
                argsList=argList,
-               argsFile=argsFile,
+               argsFile=nlmeControlFile,
                workflow=workFlow,
                runInBackground=runInBackground)
 
@@ -269,7 +280,6 @@ RunShotgunSearch <-function(
 #' Method to execute an NLME stepwise covariate search
 #'
 #' @param  hostPlatform How to execute the run(NlmeParallelHost)
-#' @param  dataset Dataset and model information(NlmeDataset)
 #' @param  params Engine parameters(NlmeEngineExtraParams)
 #' @param  covariateModel Covariate Effects Model(NlmeCovariateEffectModel)
 #' @param  stepwiseParam stepwise parameters(NlmeStepwiseParams)
@@ -278,15 +288,12 @@ RunShotgunSearch <-function(
 #'
 #' @examples
 #'
-#' dataset = NlmeDataset()
-#'
 #' param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_FOCE_LB,
 #'                              PARAMS_NUM_ITERATIONS=1000)
 #'
 #' sp = NlmeStepwiseParams(0.01, 0.001, "-2LL")
 #' 
 #' job=stepwiseSearch(host,
-#'                    dataset,
 #'                    params,
 #'                    covariateModel(covarModel),
 #'                    sp,
@@ -296,21 +303,26 @@ RunShotgunSearch <-function(
 #'
 stepwiseSearch <-function(
                             hostPlatform,
-                            dataset,
                             params= NULL,
                             covariateModel,
                             stepwiseParams,
-                            model = NULL,
+                            model ,
                             runInBackground=TRUE)
 {
-    if ( ! is.null(model) )
-        writeDefaultFiles(model=model,dataset=dataset)
+    if ( ! is.null(model) ) {
+        writeDefaultFiles(model=model,dataset=model@dataset)
+        workingDir = model@modelInfo@workingDir
+    }
+    else
+        workingDir=getwd()
+
     return(RunStepwiseSearch(hostPlatform,
-                            dataset,
+                            model@dataset,
                             params,
                             covariateModel,
                             stepwiseParams,
-                            runInBackground))
+                            runInBackground,
+                            workingDir))
 }
 
 
@@ -324,6 +336,7 @@ stepwiseSearch <-function(
 #' @param  covariateModel Covariate Effects Model(NlmeCovariateEffectModel)
 #' @param  stepwiseParam stepwise parameters(NlmeStepwiseParams)
 #' @param  runInBackground TRUE will run in background and return prompt(Bool)
+#' @param  workingDir where to run the search
 #'
 #' @examples
 #'
@@ -345,19 +358,21 @@ RunStepwiseSearch <-function(
                             params,
                             covariateModel,
                             stepwiseParams,
-                            runInBackground=TRUE)
+                            runInBackground=TRUE,
+                            workingDir)
 {
 
     workFlow="WorkFlow"
     cleanupFromPreviousRun()
     if ( attr(hostPlatform,"hostType")== "Windows" )
         runInBackground=FALSE
-    argsFile=GenerateControlfile(dataset, params,workFlow)
-    stuff=parseControlFile(argsFile)
+
+
+    cwd = workingDir
+    argsFile=GenerateControlfile(dataset, params,workFlow,workingDir=cwd)
+    stuff=parseControlFile(cwd,argsFile)
     extraArgsFile=stuff[4]
     filesToCopy=stuff[6]
-
-    cwd = getwd()
 
     argsList=list()
     argsList=c(argsList,attr(attr(hostPlatform,"parallelMethod"),"method"))

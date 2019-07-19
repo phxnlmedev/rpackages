@@ -24,8 +24,10 @@
 ##
 ##############################################################################################################
 
+
 # Setup environment variables and loading necessary packages 
-source("C:/RsNLME/SetUpEnv_LoadRPackages.R")
+source("c:/Work/NlmeInstall_07_10_19/Examples/SetUpEnv_LoadRPackages.R")
+setwd("c:/Work/NlmeInstall_07_10_19/Examples/")
 
 
 # model name 
@@ -99,11 +101,11 @@ modelColumnMapping(model) # output the mapping
 #          - Run the model and then load the simulation results 
 # ==========================================================================================================
 
-# Create the default name for the model, input dataset and mapping files 
-NlmeFileNames = NlmeDataset()
+
 
 # Host setup 
 host = NlmeParallelHost(sharedDirectory = Sys.getenv("NLME_ROOT_DIRECTORY")
+                        , installationDirectory = Sys.getenv("INSTALLDIR")
                         , parallelMethod = NlmeParallelMethod("LOCAL_MPI")
                         , hostName = "MPI"
                         , numCores = 1
@@ -126,10 +128,10 @@ SimSetup = NlmeSimulationParams(simulationTables = c(SimTableObs))
 #                     Run the model and then load the simulation results 
 # ----------------------------------------------------------------------------------------------------
 # Run the model 
-job = simmodel(host, NlmeFileNames, SimSetup, model)
+job = simmodel(host, SimSetup, model)
 
 # Load the results 
-dt_temp = fread("SimTableObs.csv")
+dt_temp = fread(paste0(model@modelInfo@workingDir,"/SimTableObs.csv"))
 
 # Add a column to indicate the value of MeanDelayTime
 dt_temp$MeanDelayTime = MeanDelayTimeValues[1]
@@ -157,10 +159,10 @@ if (numMeanDelayTimeValues > 1) {
     modelTemp = copyModel(model, modelName = paste0(ModelName, "_DelayTime", MeanDelayTimeValues[i]))
     
     # Simulate the new model 
-    job = simmodel(host, NlmeFileNames, SimSetup, modelTemp)
+    job = simmodel(host, SimSetup, modelTemp)
     
     # Load the results 
-    dt_temp = fread("SimTableObs.csv")
+    dt_temp = fread(paste0(model@modelInfo@workingDir,"/SimTableObs.csv"))
     
     # Add a column to indicate the value of MeanDelayTime
     dt_temp$MeanDelayTime = MeanDelayTimeValues[i]

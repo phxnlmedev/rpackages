@@ -486,7 +486,7 @@ appendFlag=FALSE
         numObsVars=length(obsVars)
         if ( numObsVars == 0 ) {
         # if none specified, then take defaults for all observation params
-            obsVars = GetObservationVariables(NlmeDataset())
+            obsVars = GetObservationVariables(dataset)
             numObsVars=length(obsVars)
         }
         predxValues=""
@@ -747,11 +747,18 @@ appendFlag=FALSE
 GenerateControlfile <-function(dataset,params,workFlow,bootStratify="",
                                vpcOption=c(),
                                simOptions=c(),
-                               scenarios=c())
+                               scenarios=c(),
+                               workingDir = NULL )
 {
+
     controlFilename = "jobControlFile.txt"
     argsFilename = "jobArgsCombined.txt"
-    GenerateParamsfile(argsFilename, dataset,params,bootStratify,vpcOption,simOptions,scenarios=scenarios)
+    if ( ! is.null(workingDir) ) {
+         controlFilename = paste0(workingDir,"/",controlFilename)
+         argsFilename = argsFilename
+         argsFileFullPath = paste0(workingDir,"/",argsFilename)
+    }
+    GenerateParamsfile(argsFileFullPath, dataset,params,bootStratify,vpcOption,simOptions,scenarios=scenarios)
     cat(attr(dataset,"modelFile"),file=controlFilename,sep="\n",append=FALSE)
     cat(argsFilename,file=controlFilename,sep="",append=TRUE)
     cat(sprintf(" %s",attr(dataset,"dataFile")),file=controlFilename,sep="  ",append=TRUE)

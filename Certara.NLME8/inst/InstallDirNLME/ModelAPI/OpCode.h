@@ -11,7 +11,6 @@ enum OpCode
     OP_NUM,
     OP_DT,
     OP_COVR,
-    OP_COVR_SRML8,
     OP_DCOVR,	// backward delta covr
     OP_FCOVR,	// forward delta covr
     OP_BOLUS1,

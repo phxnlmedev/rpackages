@@ -4,12 +4,14 @@
 \alias{mapCovariate}
 \title{mapCovariate : maps a covariate name to input file column name}
 \usage{
-mapCovariate(input, covarNames, mapFile = "cols1.txt")
+mapCovariate(input, covarNames, workingDir, mapFile = "cols1.txt")
 }
 \arguments{
 \item{input}{observation data frame}
 
 \item{covarNames}{comma separated covariate names}
+
+\item{workingDir}{run directory}
 
 \item{mapFile}{column mapping file name}
 }

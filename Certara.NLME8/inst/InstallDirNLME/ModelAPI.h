@@ -74,9 +74,10 @@ void NewPredOneSubject(
 );
 int GetNumObservations();
 int GetObservationNumber(const char * _nm);
-void GetObservationName(int * _pi, char * _nm);
+const char * GetObservationName(int * _pi);
 int GetObservationType(int * _pi);
 void GetObservationBqlLimit(int * _pi, double * _bqllimit);
+const char * GetObsSigmaName(int* _piWhichObs);
 int GetPredObsError(int _iObs);
 double GetPredVFCorrectionFactor(int _iError);
 void GetPredName(int * _iWhichObs, char * _nm);

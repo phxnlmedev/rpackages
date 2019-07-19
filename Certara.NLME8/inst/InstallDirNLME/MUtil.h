@@ -147,6 +147,7 @@ void  SetDbgCallback(fDebug * _p);
 void  SetODELevel(int * _piODELevel);
 void  ModelBreakPoint();
 const char*  GetErrorMsg();
+bool IsErrorMessageSet();
 void  SetEnableLogTransform(int * _pbEnableLogTransform);
 void  SetBreakTime(double * pdTime);
 void  SetLogFloor(double * _lf);
@@ -231,7 +232,13 @@ void ScanOneSubjectCountObs(
     , int * pnObs
     , double * pdMaxTime
 );
-void ScanOneSubjectGetCovariate(
+void ScanOneSubjectGetCovariateMean(
+    const unsigned char * *pb
+    , const char * sCovName
+    , double * pVal
+);
+
+void ScanOneSubjectGetCovariateMedian(
     const unsigned char * *pb
     , const char * sCovName
     , double * pVal

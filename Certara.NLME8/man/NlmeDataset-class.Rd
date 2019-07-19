@@ -29,6 +29,8 @@ Class represents an NLME dataset object}
 \item{outputFilename}{Name of output file}
 
 \item{phoenixSourceDir}{Directory containing phoenix generated files}
+
+\item{workingDir}{Directory containing datafiles(default cwd)}
 }
 \description{
 NLME dataset object
@@ -36,6 +38,6 @@ NLME dataset object
 Class represents an NLME dataset object
 }
 \examples{
-dataset = NlmeDataset()
+dataset = NlmeDataset(workingDir)
 
 }

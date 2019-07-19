@@ -1,0 +1,38 @@
+
+library(Certara.NLME8)
+#
+# Pick the 1st host defined in %NLME_ROOT_DIRECTORY%\InstallDirNLME\setup_env.remove
+#
+host=hosts[[1]]
+# default dataset generated in Phoenix with test.mdl, data1.txt, cols1.txt
+dataset = NlmeDataset(workingDir=getwd())
+#
+# MCPEM engine with 100 iterations and Central diff Stderr and still ODE_STIFF
+#
+param = NlmeEngineExtraParams(PARAMS_METHOD=METHOD_QRPEM,
+                             PARAMS_MCPEM=1,
+                             PARAMS_NUM_ITERATIONS=100,
+							 PARAMS_STDERR= ERR_CENTRAL_DIFF,
+							 PARAMS_ODE=ODE_STIFF
+							 )
+# This gives you help on all engine parameters
+# ?NlmeEngineExtraParams
+file.remove("progress.xml")
+
+#
+# run the job, on windows it blocks execution, on Linux by default it runs in parallel
+#
+job=RunSimpleEstimation(host,dataset,param,workingDir=getwd())
+#
+# Status of a running job
+#
+print(job)
+while (!(NlmeJobStatus(job) == "Finished" || NlmeJobStatus(job) == "Failed") )
+{
+    print(NlmeJobStatus(job))
+    print(job)
+    Sys.sleep(5)
+}
+print(job)
+
+

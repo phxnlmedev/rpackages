@@ -2,6 +2,8 @@
 library(parallel)
 library(XML)
 
+Sys.setenv("PhoenixLicenseFile"="C:\\Program Files (x86)\\Pharsight\\Phoenix\\application\\Services\\Licensing\\lservrc")
+Sys.setenv("shared_directory"=getwd())
 #
 # Check environment variables 
 #
@@ -26,7 +28,8 @@ Sys.setenv("INSTALLDIR"=paste0(rootDirectory,"/InstallDirNLME"))
 # 
 # Example of a parallel host for Multicore execution
 #
-host1 = NlmeParallelHost(sharedDirectory=rootDirectory,
+host1 = NlmeParallelHost(sharedDirectory=getwd(),
+                         installationDirectory=rootDirectory,
                         parallelMethod=NlmeParallelMethod("MULTICORE"),
                         hostName="Multicore",
                         numCores=4)
@@ -46,7 +49,8 @@ host3 = NlmeParallelHost(sharedDirectory=rootDirectory,
                         hostName="SgeGrid",
                         numCores=8)	
 						
-host4 = NlmeParallelHost(sharedDirectory=rootDirectory,
+host4 = NlmeParallelHost(sharedDirectory=getwd(),
+                         installationDirectory=rootDirectory,
                         parallelMethod=NlmeParallelMethod("LOCAL_MPI"),
                         hostName="LOCAL_MPI",
                         numCores=4)							
@@ -59,7 +63,7 @@ hosts=c(host1,host2,host3,host4)
 # Some defaults
 #
 defaultParams=NlmeEngineExtraParams()
-defaultDataset=NlmeDataset()
+#defaultDataset=NlmeDataset()
 defaultHost=hosts[[1]]
 
 
